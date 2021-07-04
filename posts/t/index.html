@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en-us">
+    
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="theme-color" content="dark">
+    <title> 02.07.2021 | Uday&#39;s website</title>
+    
+    
+    
+    <link rel="stylesheet" href="/sass/main.min.12754930aaca2409561861a9f13c52153f073ef96d63061a9a330c250f392fcb.css">
+</head>
+
+    <body class="dark">
+        <nav class="navbar">
+    <div class="container">
+        <div class="flex">
+            <div>
+                <a class="brand" href="/">
+                    
+                    Uday&#39;s website
+                    </a>
+            </div>
+            <div class="flex">
+                
+                <a href="/updates/">Updates</a>
+                
+                <button id="dark-mode-button"></button>
+            </div>
+            </div>
+    </div>
+</nav>
+        <main>
+            
+
+<div class="container">
+    <article>
+        <header class="article-header">
+            <div class="thumb">
+                <div>
+                    <h1>02.07.2021</h1>
+                    <div class="post-meta">
+                        <div>
+                            By Uday on <time>July 04, 2021</time>
+                        </div>
+                        <div class="tags">
+                            
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+    </article>
+
+    <div class="article-post">
+    <h2 id="deploying-kubernetes-on-aws">Deploying Kubernetes on AWS</h2>
+<h3 id="creating-the-instances">Creating the Instances</h3>
+<p>We will use the AWS console to create 3 instances and later use them for Kubernetes. The steps for the following are mentioned below:</p>
+<ul>
+<li>
+<p>Firstly, we will launch an EC2 instance like we usually and configure it so that it launches 3 identical instances.</p>
+</li>
+<li>
+<p>We create a key pair (this is important for connecting to it later) and download it.</p>
+</li>
+<li>
+<p>We launch the instances.</p>
+</li>
+<li>
+<p>We also need to enable SSH access from the Security Group settings</p>
+</li>
+<li>
+<p>We can name the instances accordingly</p>
+</li>
+</ul>
+<h3 id="configuring-access-to-the-instances">Configuring access to the Instances</h3>
+<p>Now, we need to connect to the Instances on our Ubuntu device. We run 3 terminals as we need to connect to 3 instances.</p>
+<p>We enter the command on the first terminal</p>
+<pre><code>chmod 400 kbs-server.pem
+ssh -i kbs-server.pem ubuntu@3.93.57.270
+
+</code></pre><p>where kbs-server.pem is the name of the key pair file &amp; 3.93.57.270 is the public IP of the first instance.</p>
+<p>On the second terminal, we run the command</p>
+<pre><code>ssh -i kbs-server.pem ubuntu@3.84.56.175
+</code></pre><p>On the third terminal, we run the command</p>
+<pre><code>ssh -i kbs-server.pem ubuntu@52.84.63.47
+</code></pre><p>Now that we have connected all three instances, we need to install Kubernetes. We already installed docker on each terminal beforehand.</p>
+<pre><code>sudo apt-get update
+sudo apt-get install -y apt-transport-https ca-certificates curl
+sudo curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg
+echo &quot;deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main&quot; | sudo tee /etc/apt/sources.list.d/kubernetes.list
+sudo apt-get update
+sudo apt-get install -y kubelet kubeadm kubectl
+sudo apt-mark hold kubelet kubeadm kubectl
+</code></pre><p>We also need to allow bridging, so we enable the iptables on each terminal.</p>
+<pre><code>echo &quot;net.bridge.bridge-nf-call-iptables=1&quot; | sudo tee -a /etc/sysctl.conf
+sudo sysctl -p
+
+</code></pre><h3 id="deploying-a-cluster">Deploying a Cluster</h3>
+<p>On the master server, we initialise the cluster</p>
+<pre><code>sudo kubeadm init --pod-network-cidr=10.244.0.0/16
+</code></pre><p>After this command, we will get an output in a few minutes that allows the worker branches to join the cluster. It has an output as follows:</p>
+<pre><code>kubeadm join 172.31.37.80:6443 --token ... --discovery-token-ca-cert-hash ...
+</code></pre><p>We can run this command on the other instances to allow them to join the cluster.</p>
+<p>We can also use kubectl to run more commands but this works for now.</p>
+
+    </div>
+</div>
+
+<div class="container">
+    
+    <nav class="flex container suggested">
+        
+        <a rel="prev" href="/posts/s/" title="Previous post (older)">
+            <span>Previous</span>
+            30.06.2021
+            </a>
+        
+        
+        
+    </nav>
+    
+</div>
+</main>
+
+
+        </main>
+        <footer class="footer flex">
+    <section class="container">
+        <nav class="footer-links">
+            
+            <a href="/index.xml">RSS</a>
+            
+        </nav>
+    </section>
+    
+    <script async src="/js/features.min.cb54200d744e5e9da0fa39e8ed570c19eac326f18a67904837ffada21795dfe2.js" data-enable-footnotes="true"></script>
+</footer>
+    </body>
+</html>

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en-us">
+    
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="theme-color" content="dark">
+    <title> 24.06.2021 | Uday&#39;s website</title>
+    
+    
+    
+    <link rel="stylesheet" href="/sass/main.min.12754930aaca2409561861a9f13c52153f073ef96d63061a9a330c250f392fcb.css">
+</head>
+
+    <body class="dark">
+        <nav class="navbar">
+    <div class="container">
+        <div class="flex">
+            <div>
+                <a class="brand" href="/">
+                    
+                    Uday&#39;s website
+                    </a>
+            </div>
+            <div class="flex">
+                
+                <a href="/updates/">Updates</a>
+                
+                <button id="dark-mode-button"></button>
+            </div>
+            </div>
+    </div>
+</nav>
+        <main>
+            
+
+<div class="container">
+    <article>
+        <header class="article-header">
+            <div class="thumb">
+                <div>
+                    <h1>24.06.2021</h1>
+                    <div class="post-meta">
+                        <div>
+                            By Uday on <time>June 24, 2021</time>
+                        </div>
+                        <div class="tags">
+                            
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+    </article>
+
+    <div class="article-post">
+    <h3 id="creating-a-vm-in-aws-using-terraform">Creating a VM in AWS using Terraform</h3>
+<p>We will now create a file using Terraform that defines a single AWS EC2 instance.</p>
+<p>First, we make a new directory and change into it to make it our working directory</p>
+<pre><code>mkdir terraform-aws
+cd terraform-aws
+</code></pre><p>We now create a new .tf file inside this</p>
+<pre><code>touch main.tf
+</code></pre><p>We open the file &amp; paste the following code inside it:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-html" data-lang="html">terraform {  
+  required_providers {   
+   aws = {      
+    source  = &#34;hashicorp/aws&#34;    
+    version = &#34;~&gt; 3.27&#34;    
+    }
+  }
+  required_version = &#34;&gt;= 0.14.9&#34;}
+
+provider &#34;aws&#34; { 
+  profile = &#34;default&#34;  
+  region  = &#34;us-west-2&#34;
+ }
+
+resource &#34;aws_instance&#34; &#34;app_server&#34; {  
+  ami           = &#34;ami-830c94e3&#34;  
+  instance_type = &#34;t2.micro&#34;
+   
+  tags = {    
+  Name = &#34;ExampleAppServerInstance&#34;  
+  }
+ }</code></pre></div>
+<p>Next, we initialise the directory with the command</p>
+<pre><code>terraform init
+</code></pre><p>Terraform then downloads the aws provider and installs it in a subdirectory of the current working directory.</p>
+<p>Next, we need to format and validate the configuration,</p>
+<pre><code>terraform fmt
+</code></pre><p>The command updates configurations in the current directory. If the file was already formatted correctly, Terraform won&rsquo;t return any output. Otherwise, it would print out the names of the files it modified after the command was used.</p>
+<p>In this case, no output is returned as the file was already formatted correctly.</p>
+<p>Next, we validate the configuration by using</p>
+<pre><code>terraform validate
+</code></pre><p>If the configuration is valid, Terraform will return a message confirming it.</p>
+<p>Now, we just have to apply the following command,</p>
+<pre><code>terraform apply
+</code></pre><p>Terraform will print out an execution plan. Type yes to proceed.</p>
+<p>The EC2 instance has been created.</p>
+<script src="https://asciinema.org/a/422553.js" id="asciicast-422553" async></script>
+
+    </div>
+</div>
+
+<div class="container">
+    
+    <nav class="flex container suggested">
+        
+        <a rel="prev" href="/posts/p/" title="Previous post (older)">
+            <span>Previous</span>
+            22.06.2021
+            </a>
+        
+        
+        
+        <a rel="next" href="/posts/r/" title="Next post (newer)">
+            <span>Next</span>
+            29.06.2021
+            </a> 
+        
+    </nav>
+    
+</div>
+</main>
+
+
+        </main>
+        <footer class="footer flex">
+    <section class="container">
+        <nav class="footer-links">
+            
+            <a href="/index.xml">RSS</a>
+            
+        </nav>
+    </section>
+    
+    <script async src="/js/features.min.cb54200d744e5e9da0fa39e8ed570c19eac326f18a67904837ffada21795dfe2.js" data-enable-footnotes="true"></script>
+</footer>
+    </body>
+</html>

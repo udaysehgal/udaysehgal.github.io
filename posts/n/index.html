@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en-us">
+    
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="theme-color" content="dark">
+    <title> 17.06.2021 | Uday&#39;s website</title>
+    
+    
+    
+    <link rel="stylesheet" href="/sass/main.min.12754930aaca2409561861a9f13c52153f073ef96d63061a9a330c250f392fcb.css">
+</head>
+
+    <body class="dark">
+        <nav class="navbar">
+    <div class="container">
+        <div class="flex">
+            <div>
+                <a class="brand" href="/">
+                    
+                    Uday&#39;s website
+                    </a>
+            </div>
+            <div class="flex">
+                
+                <a href="/updates/">Updates</a>
+                
+                <button id="dark-mode-button"></button>
+            </div>
+            </div>
+    </div>
+</nav>
+        <main>
+            
+
+<div class="container">
+    <article>
+        <header class="article-header">
+            <div class="thumb">
+                <div>
+                    <h1>17.06.2021</h1>
+                    <div class="post-meta">
+                        <div>
+                            By Uday on <time>June 17, 2021</time>
+                        </div>
+                        <div class="tags">
+                            
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+    </article>
+
+    <div class="article-post">
+    <h3 id="deploying-an-nginx-inside-docker-container">Deploying an Nginx inside Docker Container</h3>
+<p>First, we need to see the images present on our system. For that, we do</p>
+<pre><code>docker images
+</code></pre><p>When we run this command, we get an error. This is because we need to run every docker command through sudo since we have not added any users to the docker group.</p>
+<script src="https://asciinema.org/a/420868.js" id="asciicast-420868" async></script>
+<p>Now, we run the correct command:</p>
+<pre><code>sudo docker images
+</code></pre><p>A list of images is obtained. We do not have the nginx image, so we need to download it from Docker hub.</p>
+<p>We run the following command:</p>
+<pre><code>sudo docker pull nginx
+</code></pre><p>This command would by default pull the latest nginx image but we can specify a version if we would like to do so.</p>
+<p>Next, we run the following commands:</p>
+<pre><code>sudo docker ps
+
+sudo docker ps -a
+</code></pre><p>The first command shows us the running containers while the second one shows us the stopped containers.</p>
+<p>Now, we run nginx inside a container with these commands:</p>
+<pre><code>sudo docker run -p 8000:80 nginx
+</code></pre><p>-p provides the flag which maps the ports inside the containers into a local machine
+8000 is the port on our local machine (i.e. it would be hosted on localhost:8000)
+80 is the port of the container (80 is the default for nginx)
+nginx is the image name</p>
+<p>When we open localhost:8000, we will see the default page for the nginx container.</p>
+<script src="https://asciinema.org/a/420870.js" id="asciicast-420870" async></script>
+<h4 id="deploying-our-own-page-inside-the-container">Deploying our own Page inside the container</h4>
+<p>First, we make a new directory &amp; then go inside that directory</p>
+<pre><code>mkdir nginx-html
+cd nginx-html
+</code></pre><p>Then, we make two files inside them with these commands:</p>
+<pre><code>touch index.html
+touch about.html
+</code></pre><p>Now, we write some simple html code inside the files. After we are finished with this, we go to terminal.</p>
+<p>We run the command:</p>
+<pre><code>sudo docker run -d -p 8000:80 -v ~/nginx-html:/usr/share/nginx/html --name mynginx nginx
+</code></pre><p>So, this command is quite different to the one we ran earlier &amp; it is such as we are deploying our own files.</p>
+<p>-d is for detached mode/background-mode
+-v is for the volume. It maps the current directory (nginx-html) to the path inside the nginx container through which nginx serves its webpages (/usr/share/nginx/html)
+my-nginx is the container name
+nginx is the image name</p>
+<p>If we open the localhost:8000, the contents of the index.html would be displayed.</p>
+<p>If we go to localhost:8000/about.html we would see the about.html page.</p>
+<p>Any changes we make in the two files will automatically be updated in the nginx container. This is because the path from where the nginx serves its html file is directly mapped to our folder in which we are creating/modifying these files.</p>
+
+    </div>
+</div>
+
+<div class="container">
+    
+    <nav class="flex container suggested">
+        
+        <a rel="prev" href="/posts/m/" title="Previous post (older)">
+            <span>Previous</span>
+            16.06.2021
+            </a>
+        
+        
+        
+        <a rel="next" href="/posts/p/" title="Next post (newer)">
+            <span>Next</span>
+            22.06.2021
+            </a> 
+        
+    </nav>
+    
+</div>
+</main>
+
+
+        </main>
+        <footer class="footer flex">
+    <section class="container">
+        <nav class="footer-links">
+            
+            <a href="/index.xml">RSS</a>
+            
+        </nav>
+    </section>
+    
+    <script async src="/js/features.min.cb54200d744e5e9da0fa39e8ed570c19eac326f18a67904837ffada21795dfe2.js" data-enable-footnotes="true"></script>
+</footer>
+    </body>
+</html>

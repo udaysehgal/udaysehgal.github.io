@@ -1,0 +1,620 @@
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Uday&#39;s website</title>
+    <link>https://udaysehgal.github.io/</link>
+    <description>Recent content on Uday&#39;s website</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sun, 04 Jul 2021 22:31:34 +0530</lastBuildDate><atom:link href="https://udaysehgal.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+    <title>02.07.2021</title>
+    <link>https://udaysehgal.github.io/posts/t/</link>
+    <pubDate>Sun, 04 Jul 2021 22:31:34 +0530</pubDate>
+    <author>Uday</author>
+    <guid>https://udaysehgal.github.io/posts/t/</guid>
+    <description>
+        &lt;h2 id=&#34;deploying-kubernetes-on-aws&#34;&gt;Deploying Kubernetes on AWS&lt;/h2&gt;
+&lt;h3 id=&#34;creating-the-instances&#34;&gt;Creating the Instances&lt;/h3&gt;
+&lt;p&gt;We will use the AWS console to create 3 instances and later use them for Kubernetes. The steps for the following are mentioned below:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;Firstly, we will launch an EC2 instance like we usually and configure it so that it launches 3 identical instances.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;We create a key pair (this is important for connecting to it later) and download it.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;We launch the instances.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;We also need to enable SSH access from the Security Group settings&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;We can name the instances accordingly&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;configuring-access-to-the-instances&#34;&gt;Configuring access to the Instances&lt;/h3&gt;
+&lt;p&gt;Now, we need to connect to the Instances on our Ubuntu device. We run 3 terminals as we need to connect to 3 instances.&lt;/p&gt;
+&lt;p&gt;We enter the command on the first terminal&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;chmod 400 kbs-server.pem
+ssh -i kbs-server.pem ubuntu@3.93.57.270
+
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;where kbs-server.pem is the name of the key pair file &amp;amp; 3.93.57.270 is the public IP of the first instance.&lt;/p&gt;
+&lt;p&gt;On the second terminal, we run the command&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;ssh -i kbs-server.pem ubuntu@3.84.56.175
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;On the third terminal, we run the command&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;ssh -i kbs-server.pem ubuntu@52.84.63.47
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Now that we have connected all three instances, we need to install Kubernetes. We already installed docker on each terminal beforehand.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;sudo apt-get update
+sudo apt-get install -y apt-transport-https ca-certificates curl
+sudo curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg
+echo &amp;quot;deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main&amp;quot; | sudo tee /etc/apt/sources.list.d/kubernetes.list
+sudo apt-get update
+sudo apt-get install -y kubelet kubeadm kubectl
+sudo apt-mark hold kubelet kubeadm kubectl
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;We also need to allow bridging, so we enable the iptables on each terminal.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;echo &amp;quot;net.bridge.bridge-nf-call-iptables=1&amp;quot; | sudo tee -a /etc/sysctl.conf
+sudo sysctl -p
+
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;deploying-a-cluster&#34;&gt;Deploying a Cluster&lt;/h3&gt;
+&lt;p&gt;On the master server, we initialise the cluster&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;sudo kubeadm init --pod-network-cidr=10.244.0.0/16
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;After this command, we will get an output in a few minutes that allows the worker branches to join the cluster. It has an output as follows:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;kubeadm join 172.31.37.80:6443 --token ... --discovery-token-ca-cert-hash ...
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;We can run this command on the other instances to allow them to join the cluster.&lt;/p&gt;
+&lt;p&gt;We can also use kubectl to run more commands but this works for now.&lt;/p&gt;
+
+    </description>
+    </item>
+    
+    <item>
+    <title>30.06.2021</title>
+    <link>https://udaysehgal.github.io/posts/s/</link>
+    <pubDate>Wed, 30 Jun 2021 14:40:51 +0530</pubDate>
+    <author>Uday</author>
+    <guid>https://udaysehgal.github.io/posts/s/</guid>
+    <description>
+        &lt;h2 id=&#34;creating-a-vpc-using-terraform&#34;&gt;Creating a VPC using Terraform&lt;/h2&gt;
+&lt;p&gt;After we have manually created a VPC using the wizard, we will now create a VPC using terraform and AWS client.&lt;/p&gt;
+&lt;h3 id=&#34;creating-the-necessary-files&#34;&gt;Creating the necessary files&lt;/h3&gt;
+&lt;p&gt;We first create a new directory &amp;amp; change inside it&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;mkdir terraform-vpc_1
+cd terraform-vpc_1
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Now, we need to create a main.tf file. We use the command:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;touch main.tf
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;This file will house our resources which we need to create a VPC. The configuration that we will write in the file will do 4 things:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Create a VPC&lt;/li&gt;
+&lt;li&gt;Create an Internet Gateway &amp;amp; attach it to the VPC&lt;/li&gt;
+&lt;li&gt;Create both public &amp;amp; private subnets&lt;/li&gt;
+&lt;li&gt;Create a NAT Gateway&lt;/li&gt;
+&lt;li&gt;Create a route table&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;The Internet gateway allows the traffic within the VPC to be accessible to other users.
+The NAT gateway will allow private subnets to reach out to the internet without needing an externally routable IP address.
+The route table keeps track of paths, and determines where to forward traffic.&lt;/p&gt;
+&lt;p&gt;The contents of the main.tf file:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;
+ Create a VPC
+   resource &amp;quot;aws_vpc&amp;quot; &amp;quot;Main&amp;quot; {               
+   cidr_block       = var.main_vpc_cidr     
+   instance_tenancy = &amp;quot;default&amp;quot;
+ }
+ Create Internet Gateway and attach it to VPC
+   resource &amp;quot;aws_internet_gateway&amp;quot; &amp;quot;IGW&amp;quot; {   
+   vpc_id =  aws_vpc.Main.id               
+ }
+ Create a Public Subnets.
+   resource &amp;quot;aws_subnet&amp;quot; &amp;quot;publicsubnets&amp;quot; {   
+   vpc_id =  aws_vpc.Main.id
+   cidr_block = &amp;quot;${var.public_subnets}&amp;quot;        
+ }
+ Create a Private Subnet                  
+   resource &amp;quot;aws_subnet&amp;quot; &amp;quot;privatesubnets&amp;quot; {
+   vpc_id =  aws_vpc.Main.id
+   cidr_block = &amp;quot;${var.private_subnets}&amp;quot;          
+ }
+ Route table for Public Subnet&#39;s
+    resource &amp;quot;aws_route_table&amp;quot; &amp;quot;PublicRT&amp;quot; {    
+    vpc_id =  aws_vpc.Main.id
+         route {
+    cidr_block = &amp;quot;0.0.0.0/0&amp;quot;               
+    gateway_id = aws_internet_gateway.IGW.id
+     }
+ }
+ Route table for Private Subnet&#39;s
+   resource &amp;quot;aws_route_table&amp;quot; &amp;quot;PrivateRT&amp;quot; {    
+   vpc_id = aws_vpc.Main.id
+   route {
+   cidr_block = &amp;quot;0.0.0.0/0&amp;quot;             
+   nat_gateway_id = aws_nat_gateway.NATgw.id
+   }
+ }
+ Route table Association with Public Subnet&#39;s
+    resource &amp;quot;aws_route_table_association&amp;quot; &amp;quot;PublicRTassociation&amp;quot; {
+    subnet_id = aws_subnet.publicsubnets.id
+    route_table_id = aws_route_table.PublicRT.id
+ }
+ Route table Association with Private Subnet&#39;s
+    resource &amp;quot;aws_route_table_association&amp;quot; &amp;quot;PrivateRTassociation&amp;quot; {
+    subnet_id = aws_subnet.privatesubnets.id
+    route_table_id = aws_route_table.PrivateRT.id
+ }
+ resource &amp;quot;aws_eip&amp;quot; &amp;quot;nateIP&amp;quot; {
+   vpc   = true
+ }
+ Creating the NAT Gateway using subnet_id and allocation_id
+   resource &amp;quot;aws_nat_gateway&amp;quot; &amp;quot;NATgw&amp;quot; {
+   allocation_id = aws_eip.nateIP.id
+   subnet_id = aws_subnet.publicsubnets.id
+ }
+
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Next, we need to create another file inside the original directory named vars.tf&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;touch vars.tf
+
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;This file would contain all the variables that the main.tf file references.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt; variable &amp;quot;region&amp;quot; {}
+ variable &amp;quot;main_vpc_cidr&amp;quot; {}
+ variable &amp;quot;public_subnets&amp;quot; {}
+ variable &amp;quot;private_subnets&amp;quot; {}
+
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;This file has been created for convenience purposes only. The content of this file can be written in the main.tf file and it would not affect the functioning at all. It is created just to break things and make it easier to understand the files.&lt;/p&gt;
+&lt;p&gt;Next, we will create one more file called provider.tf&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;touch provider.tf
+
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;This file defines providers (in this case, AWS) and allows Terraform to connect with them.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt; provider &amp;quot;aws&amp;quot; {
+   region = &amp;quot;us-west-1&amp;quot;
+   profile = default
+ }
+
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The profile = default command is a way for Terraform to get the AWS credentials. When we did aws configure originally, it saved our access keys and our secret access keys on it. The profile command extracts the access keys and secret access keys from there.&lt;/p&gt;
+&lt;p&gt;Finally, we need to create a file called terraform.tfvars.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt; main_vpc_cidr = &amp;quot;10.0.0.0/24&amp;quot;
+ public_subnets = &amp;quot;10.0.0.128/26&amp;quot;
+ private_subnets = &amp;quot;10.0.0.192/26&amp;quot;
+
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;This file contains the values that Terraform will use to replace the variable references inside of the configuration file. The region has not been defined as it can vary and we will enter it manually later.&lt;/p&gt;
+&lt;p&gt;Next, we can run the tree command to see the files inside the directory. It doesn&amp;rsquo;t work for us so we use&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;ls -l
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;We can verify that all the files have been created and are stored in the correct location.&lt;/p&gt;
+&lt;script src=&#34;https://asciinema.org/a/423494.js&#34; id=&#34;asciicast-423494&#34; async&gt;&lt;/script&gt;
+&lt;h3 id=&#34;running-terraform-to-create-the-vpc&#34;&gt;Running Terraform to create the VPC&lt;/h3&gt;
+&lt;script src=&#34;https://asciinema.org/a/423495.js&#34; id=&#34;asciicast-423495&#34; async&gt;&lt;/script&gt;
+&lt;p&gt;We need to be inside the directory where we have stored all these files. Next, we need to enter&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;terraform init
+
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;We get some errors after we type this command. This is because we have made errors in the main.tf. We need to comment the headings on the top of code blocks or delete them. After making the necessary remedies, we run the command again.&lt;/p&gt;
+&lt;p&gt;The command runs and we get a confirmation message.&lt;/p&gt;
+&lt;p&gt;Next, we run the command&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;terrform plan
+
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Here, we enter the region we want to deploy the VPC in. Mistakenly, the wrong region was entered at first so the command was ran again and the correct information was entered.&lt;/p&gt;
+&lt;p&gt;This command we will show us every AWS resource this Terraform configuration will create.&lt;/p&gt;
+&lt;p&gt;Next, we need to apply our changes with the command&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;terraform apply
+
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;When we type this command, Terraform will read the configuration (main.tf) and the other files to compile a configuration. It will then send that configuration up to AWS as instructions to build the VPC.&lt;/p&gt;
+&lt;p&gt;We need to type yes and the configuration will start building and will be deployed in a few minutes.&lt;/p&gt;
+&lt;p&gt;We have successfully built a VPC using Terraform !&lt;/p&gt;
+&lt;h3 id=&#34;verifying-the-vpc-in-aws&#34;&gt;Verifying the VPC in AWS&lt;/h3&gt;
+&lt;p&gt;We open the AWS Management Console and check for the VPC.&lt;/p&gt;
+&lt;p&gt;On the VPC page, we open &amp;ldquo;Your VPCs&amp;rdquo;. We can see the VPC created with the same ID Terraform had returned earlier.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://user-images.githubusercontent.com/85174329/124259406-19b19d00-db4c-11eb-9840-6bb897e9674e.png&#34; alt=&#34;Screenshot (160)&#34;&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://user-images.githubusercontent.com/85174329/124259521-39e15c00-db4c-11eb-8bd4-ef60cade1885.png&#34; alt=&#34;Screenshot (163)&#34;&gt;&lt;/p&gt;
+&lt;p&gt;We can also open &amp;ldquo;Your Subnets&amp;rdquo; and check for the same.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://user-images.githubusercontent.com/85174329/124259446-2504c880-db4c-11eb-88bf-12b60e50b930.png&#34; alt=&#34;Screenshot (161)&#34;&gt;&lt;/p&gt;
+
+    </description>
+    </item>
+    
+    <item>
+    <title>29.06.2021</title>
+    <link>https://udaysehgal.github.io/posts/r/</link>
+    <pubDate>Tue, 29 Jun 2021 18:16:12 +0530</pubDate>
+    <author>Uday</author>
+    <guid>https://udaysehgal.github.io/posts/r/</guid>
+    <description>
+        &lt;h2 id=&#34;tasks-for-today-using-aws-cli-for-creating-a-vpc&#34;&gt;Tasks for today: Using AWS Cli for creating a VPC&lt;/h2&gt;
+&lt;p&gt;We have already worked &amp;amp; documented creating an EC2 instance on the Amazon cloud server earlier. We now move on to using the client for creating a VPC.&lt;/p&gt;
+&lt;p&gt;A VPC (Virtual Private Cloud) is basically a private virtual network which lets us launch our resources inside it. It is useful for providing a sort of isolation from the devices on the original public cloud server (eg.AWS in this case)&lt;/p&gt;
+&lt;p&gt;First, we will try running a VPC manually &amp;amp; then using Terraform. Later, we will also create an instance inside our VPC.&lt;/p&gt;
+&lt;h4 id=&#34;vpc-using-the-aws-console&#34;&gt;VPC using the AWS Console&lt;/h4&gt;
+&lt;ul&gt;
+&lt;li&gt;The first thing that we do is open the Amazon VPC console (&lt;a href=&#34;https://console.aws.amazon.com/vpc/)&#34;&gt;https://console.aws.amazon.com/vpc/)&lt;/a&gt;. We need to select a VPC Configuration. We will be choosing the VPC with a Single Public Subnet option. ublic subnet instances use Public IPs to access the Internet.
+It uses a /16 network with a /24 subnet.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;/16 refers to a 16 IPv4 CIDR block (a network with 65,536 private IP addresses) while&lt;/p&gt;
+&lt;p&gt;/24 refers to a size /24 IPv4 subnet (a range of 256 private IP addresses)&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;The next step is to name the VPC &amp;amp; the subnet. We would not be changing any of the autofilled data except for the name of the VPC &amp;amp; the Subnet.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;We click on create VPC and the VPC should be successfully created!&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;img src=&#34;https://user-images.githubusercontent.com/85174329/123818273-79266780-d916-11eb-9edc-837cff4e770c.png&#34; alt=&#34;vpc_1&#34;&gt;&lt;/p&gt;
+&lt;h5 id=&#34;creating-an-instance-inside-our-vpc&#34;&gt;Creating an instance inside our VPC&lt;/h5&gt;
+&lt;p&gt;Now, we move on to launching an instance inside the VPC we have just created.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;We open the amazon VPC console and click on Launch Instance.&lt;/li&gt;
+&lt;li&gt;Next, we have to choose an AMI. In this case, we choose Amazon Linux 2 AMI (HVM), SSD Volume Type - ami-0721c9af7b9b75114 (64-bit x86)&lt;/li&gt;
+&lt;li&gt;Now, we choose the Instance type which in this case is t2.micro. Click on Review &amp;amp; Launch&lt;/li&gt;
+&lt;li&gt;On the Configure Instance Details page, we need select the VPC and the subnet that we created. We leave the rest of the settings unchanged &amp;amp; move on.&lt;/li&gt;
+&lt;li&gt;Optionally, we can add a name to our instance through the Add Tags page. This helps us identify our instance later. This does not affect the functioning of the instance.&lt;/li&gt;
+&lt;li&gt;We do not need to change any settings on the Configure Security Group page.&lt;/li&gt;
+&lt;li&gt;Next, on the Review Instance Launch page, we choose Launch.&lt;/li&gt;
+&lt;li&gt;A dialog box appears that says &amp;ldquo;Select an existing key pair or create a new key pair&amp;rdquo;. We will create a new key pair and download it to our device. This will be required to connect to our instance after it has been launched.&lt;/li&gt;
+&lt;li&gt;We can click on View Instances on the Instances page to see that our instance has been successfully launched.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;We get an error that says the instance cannot be launched as the t2.micro is not available in the region we are working on. We need to change our region and create a new VPC there as this one won&amp;rsquo;t work for the other region.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://user-images.githubusercontent.com/85174329/123816768-3617c480-d915-11eb-886c-c7aa06b6e683.png&#34; alt=&#34;error_1&#34;&gt;&lt;/p&gt;
+&lt;p&gt;After we do that, we get a confirmation message.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://user-images.githubusercontent.com/85174329/123818343-89d6dd80-d916-11eb-95b3-e3b10019a4d6.png&#34; alt=&#34;launch_1&#34;&gt;&lt;/p&gt;
+&lt;p&gt;We have successfully created an instance inside our own VPC!&lt;/p&gt;
+&lt;p&gt;Next, we need to stop/terminate the instance as well as delete the VPC to ensure the AWS resources aren&amp;rsquo;t wasted.&lt;/p&gt;
+&lt;p&gt;This shows us that the instance we ran was inside the VPC. (The VPC ID &amp;amp; the Subnet ID in the image match the original IDs)&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://user-images.githubusercontent.com/85174329/123818013-441a1500-d916-11eb-8164-8890c8dedce8.png&#34; alt=&#34;instanceVPC&#34;&gt;&lt;/p&gt;
+&lt;p&gt;Our next step would be automating this whole process using Terraform.&lt;/p&gt;
+
+    </description>
+    </item>
+    
+    <item>
+    <title>24.06.2021</title>
+    <link>https://udaysehgal.github.io/posts/q/</link>
+    <pubDate>Thu, 24 Jun 2021 21:16:22 +0530</pubDate>
+    <author>Uday</author>
+    <guid>https://udaysehgal.github.io/posts/q/</guid>
+    <description>
+        &lt;h3 id=&#34;creating-a-vm-in-aws-using-terraform&#34;&gt;Creating a VM in AWS using Terraform&lt;/h3&gt;
+&lt;p&gt;We will now create a file using Terraform that defines a single AWS EC2 instance.&lt;/p&gt;
+&lt;p&gt;First, we make a new directory and change into it to make it our working directory&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;mkdir terraform-aws
+cd terraform-aws
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;We now create a new .tf file inside this&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;touch main.tf
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;We open the file &amp;amp; paste the following code inside it:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-html&#34; data-lang=&#34;html&#34;&gt;terraform {  
+  required_providers {   
+   aws = {      
+    source  = &amp;#34;hashicorp/aws&amp;#34;    
+    version = &amp;#34;~&amp;gt; 3.27&amp;#34;    
+    }
+  }
+  required_version = &amp;#34;&amp;gt;= 0.14.9&amp;#34;}
+
+provider &amp;#34;aws&amp;#34; { 
+  profile = &amp;#34;default&amp;#34;  
+  region  = &amp;#34;us-west-2&amp;#34;
+ }
+
+resource &amp;#34;aws_instance&amp;#34; &amp;#34;app_server&amp;#34; {  
+  ami           = &amp;#34;ami-830c94e3&amp;#34;  
+  instance_type = &amp;#34;t2.micro&amp;#34;
+   
+  tags = {    
+  Name = &amp;#34;ExampleAppServerInstance&amp;#34;  
+  }
+ }&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Next, we initialise the directory with the command&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;terraform init
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Terraform then downloads the aws provider and installs it in a subdirectory of the current working directory.&lt;/p&gt;
+&lt;p&gt;Next, we need to format and validate the configuration,&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;terraform fmt
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The command updates configurations in the current directory. If the file was already formatted correctly, Terraform won&amp;rsquo;t return any output. Otherwise, it would print out the names of the files it modified after the command was used.&lt;/p&gt;
+&lt;p&gt;In this case, no output is returned as the file was already formatted correctly.&lt;/p&gt;
+&lt;p&gt;Next, we validate the configuration by using&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;terraform validate
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;If the configuration is valid, Terraform will return a message confirming it.&lt;/p&gt;
+&lt;p&gt;Now, we just have to apply the following command,&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;terraform apply
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Terraform will print out an execution plan. Type yes to proceed.&lt;/p&gt;
+&lt;p&gt;The EC2 instance has been created.&lt;/p&gt;
+&lt;script src=&#34;https://asciinema.org/a/422553.js&#34; id=&#34;asciicast-422553&#34; async&gt;&lt;/script&gt;
+
+    </description>
+    </item>
+    
+    <item>
+    <title>22.06.2021</title>
+    <link>https://udaysehgal.github.io/posts/p/</link>
+    <pubDate>Tue, 22 Jun 2021 21:16:19 +0530</pubDate>
+    <author>Uday</author>
+    <guid>https://udaysehgal.github.io/posts/p/</guid>
+    <description>
+        &lt;h3 id=&#34;task-installing-terraform--working-with-aws&#34;&gt;Task: Installing Terraform &amp;amp; Working with AWS&lt;/h3&gt;
+&lt;h4 id=&#34;installing-terraform&#34;&gt;Installing Terraform&lt;/h4&gt;
+&lt;p&gt;We tried to install Terraform using these set of commands: (mentioned on the official website)&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;sudo apt-get update  
+sudo apt-get install -y gnupg software-properties-common curl
+curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+sudo apt-add-repository &amp;quot;deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main&amp;quot;
+sudo apt-get update 
+sudo apt-get install terraform
+&lt;/code&gt;&lt;/pre&gt;&lt;script src=&#34;https://asciinema.org/a/421939.js&#34; id=&#34;asciicast-421939&#34; async&gt;&lt;/script&gt;
+&lt;p&gt;But, we were having an issue with the second command (apt-key). We moved towards manual installation as we had faced a similar type of error earlier as well and we couldn&amp;rsquo;t debug it.&lt;/p&gt;
+&lt;p&gt;For the manual installation, we simply downloaded the package &amp;amp; unzipped it. We need to change the location of the binary terraform. We use the following set of commands:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;echo $PATH
+mv ~/Downloads/terraform /usr/local/bin/
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;This moves the terraform binary to our required location.&lt;/p&gt;
+&lt;script src=&#34;https://asciinema.org/a/421942.js&#34; id=&#34;asciicast-421942&#34; async&gt;&lt;/script&gt;
+&lt;h4 id=&#34;installing-aws-client&#34;&gt;Installing aws client&lt;/h4&gt;
+&lt;p&gt;We follow these sets of commands to install the aws client&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;curl &amp;quot;https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip&amp;quot; -o &amp;quot;awscliv2.zip&amp;quot;
+unzip awscliv2.zip
+sudo ./aws/install
+&lt;/code&gt;&lt;/pre&gt;&lt;script src=&#34;https://asciinema.org/a/421966.js&#34; id=&#34;asciicast-421966&#34; async&gt;&lt;/script&gt;
+&lt;p&gt;After this, we need to enter our access keys on the aws cli. For that we first enter the command &amp;amp; then our access keys as well as secret access key.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;aws configure
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;(The recording has not been uploaded for the above process for obvious purposes)&lt;/p&gt;
+&lt;p&gt;Our AWS cli is ready to use and we can start using it!&lt;/p&gt;
+
+    </description>
+    </item>
+    
+    <item>
+    <title>17.06.2021</title>
+    <link>https://udaysehgal.github.io/posts/n/</link>
+    <pubDate>Thu, 17 Jun 2021 11:54:51 +0530</pubDate>
+    <author>Uday</author>
+    <guid>https://udaysehgal.github.io/posts/n/</guid>
+    <description>
+        &lt;h3 id=&#34;deploying-an-nginx-inside-docker-container&#34;&gt;Deploying an Nginx inside Docker Container&lt;/h3&gt;
+&lt;p&gt;First, we need to see the images present on our system. For that, we do&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;docker images
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;When we run this command, we get an error. This is because we need to run every docker command through sudo since we have not added any users to the docker group.&lt;/p&gt;
+&lt;script src=&#34;https://asciinema.org/a/420868.js&#34; id=&#34;asciicast-420868&#34; async&gt;&lt;/script&gt;
+&lt;p&gt;Now, we run the correct command:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;sudo docker images
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;A list of images is obtained. We do not have the nginx image, so we need to download it from Docker hub.&lt;/p&gt;
+&lt;p&gt;We run the following command:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;sudo docker pull nginx
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;This command would by default pull the latest nginx image but we can specify a version if we would like to do so.&lt;/p&gt;
+&lt;p&gt;Next, we run the following commands:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;sudo docker ps
+
+sudo docker ps -a
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The first command shows us the running containers while the second one shows us the stopped containers.&lt;/p&gt;
+&lt;p&gt;Now, we run nginx inside a container with these commands:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;sudo docker run -p 8000:80 nginx
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;-p provides the flag which maps the ports inside the containers into a local machine
+8000 is the port on our local machine (i.e. it would be hosted on localhost:8000)
+80 is the port of the container (80 is the default for nginx)
+nginx is the image name&lt;/p&gt;
+&lt;p&gt;When we open localhost:8000, we will see the default page for the nginx container.&lt;/p&gt;
+&lt;script src=&#34;https://asciinema.org/a/420870.js&#34; id=&#34;asciicast-420870&#34; async&gt;&lt;/script&gt;
+&lt;h4 id=&#34;deploying-our-own-page-inside-the-container&#34;&gt;Deploying our own Page inside the container&lt;/h4&gt;
+&lt;p&gt;First, we make a new directory &amp;amp; then go inside that directory&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;mkdir nginx-html
+cd nginx-html
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Then, we make two files inside them with these commands:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;touch index.html
+touch about.html
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Now, we write some simple html code inside the files. After we are finished with this, we go to terminal.&lt;/p&gt;
+&lt;p&gt;We run the command:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;sudo docker run -d -p 8000:80 -v ~/nginx-html:/usr/share/nginx/html --name mynginx nginx
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;So, this command is quite different to the one we ran earlier &amp;amp; it is such as we are deploying our own files.&lt;/p&gt;
+&lt;p&gt;-d is for detached mode/background-mode
+-v is for the volume. It maps the current directory (nginx-html) to the path inside the nginx container through which nginx serves its webpages (/usr/share/nginx/html)
+my-nginx is the container name
+nginx is the image name&lt;/p&gt;
+&lt;p&gt;If we open the localhost:8000, the contents of the index.html would be displayed.&lt;/p&gt;
+&lt;p&gt;If we go to localhost:8000/about.html we would see the about.html page.&lt;/p&gt;
+&lt;p&gt;Any changes we make in the two files will automatically be updated in the nginx container. This is because the path from where the nginx serves its html file is directly mapped to our folder in which we are creating/modifying these files.&lt;/p&gt;
+
+    </description>
+    </item>
+    
+    <item>
+    <title>16.06.2021</title>
+    <link>https://udaysehgal.github.io/posts/m/</link>
+    <pubDate>Wed, 16 Jun 2021 11:54:56 +0530</pubDate>
+    <author>Uday</author>
+    <guid>https://udaysehgal.github.io/posts/m/</guid>
+    <description>
+        &lt;h3 id=&#34;installing-docker&#34;&gt;Installing Docker&lt;/h3&gt;
+&lt;h3 id=&#34;installing-the-repository&#34;&gt;Installing the repository&lt;/h3&gt;
+&lt;p&gt;Before we install Docker, we need to set up the Docker repository. Later, we will update Docker from this repository.&lt;/p&gt;
+&lt;p&gt;First, we update the apt package index through the first command &amp;amp; then we install packages to allow apt to use a repository&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;sudo apt-get update
+
+sudo apt-get install \
+apt-transport-https \
+ca-certificates \
+curl \
+gnupg \
+lsb-release
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Then we add Docker’s official GPG key:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+&lt;/code&gt;&lt;/pre&gt;&lt;script src=&#34;https://asciinema.org/a/420852.js&#34; id=&#34;asciicast-420852&#34; async&gt;&lt;/script&gt;
+&lt;p&gt;GPG stands for Gnu Privacy Guard. It is useful for creating public and private keys. These can be used for digital signatures or encryption/decryption.&lt;/p&gt;
+&lt;p&gt;The next command is used to set up the stable repository.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;echo \
+  &amp;quot;deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
+  $(lsb_release -cs) stable&amp;quot; | sudo tee /etc/apt/sources.list.d/docker.list &amp;gt; /dev/null
+&lt;/code&gt;&lt;/pre&gt;&lt;h5 id=&#34;installing-docker-engine&#34;&gt;Installing Docker Engine&lt;/h5&gt;
+&lt;script src=&#34;https://asciinema.org/a/420867.js&#34; id=&#34;asciicast-420867&#34; async&gt;&lt;/script&gt;
+&lt;p&gt;First, we update the apt package index &amp;amp; then install docker &amp;amp; containerd.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;sudo apt-get update
+
+sudo apt-get install docker-ce docker-ce-cli containerd.io
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;We can also install a specific version of Docker Engine by using the following command:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;apt-cache madison docker-ce
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;After typing this command, we got the following output:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;docker-ce | 5:20.10.7~3-0~ubuntu-hirsute | https://download.docker.com/linux/ubuntu hirsute/stable amd64 Packages
+docker-ce | 5:20.10.6~3-0~ubuntu-hirsute | https://download.docker.com/linux/ubuntu hirsute/stable amd64 Packages
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;We can install a specific version using the version string (the text after the first |). The code for that installation is:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;sudo apt-get install docker-ce=&amp;lt;ver_str&amp;gt; docker-ce-cli=&amp;lt;ver_str&amp;gt; containerd.io
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;where ver_str is the version string&lt;/p&gt;
+&lt;p&gt;When we tried to do that, it did not successfully run as we had already installed Docker through the first step.&lt;/p&gt;
+&lt;p&gt;Now, to check that Docker has been installed, run the following:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;sudo docker run hello-world
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The output should be a message after it downloads a test image from docker &amp;amp; runs it in the container.&lt;/p&gt;
+
+    </description>
+    </item>
+    
+    <item>
+    <title>15.06.2021</title>
+    <link>https://udaysehgal.github.io/posts/l/</link>
+    <pubDate>Tue, 15 Jun 2021 22:52:07 +0530</pubDate>
+    <author>Uday</author>
+    <guid>https://udaysehgal.github.io/posts/l/</guid>
+    <description>
+        &lt;h3 id=&#34;configuring-ssh-on-ansible&#34;&gt;Configuring SSH on Ansible&lt;/h3&gt;
+&lt;p&gt;Now, we move on to to make it possible for our node to access the Ansible server. We do this via SSH. We generate a SSH key with the command:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$ ssh-keygen
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;a href=&#34;https://asciinema.org/a/axpXVlZB9qMwUIG96Vv2erkTC&#34;&gt;&lt;img src=&#34;https://asciinema.org/a/axpXVlZB9qMwUIG96Vv2erkTC.svg&#34; alt=&#34;asciicast&#34;&gt;&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;A default name is kept for the file without a password. We display the contents of the public key with the command:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$ cat ~/.ssh/id_rsa.pub
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Our next plan of action would be to copy the text that’s displayed and log into our node server. We issue the command:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$ sudo -s
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Next, we need to open the authorized_keys file. The command used:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$ sudo nano ~/.ssh/authorized_keys
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Paste the contents of the server key at the bottom of this file and save.&lt;/p&gt;
+
+    </description>
+    </item>
+    
+    <item>
+    <title>14.06.2021</title>
+    <link>https://udaysehgal.github.io/posts/k/</link>
+    <pubDate>Mon, 14 Jun 2021 22:52:10 +0530</pubDate>
+    <author>Uday</author>
+    <guid>https://udaysehgal.github.io/posts/k/</guid>
+    <description>
+        &lt;h2 id=&#34;task-for-today--installing-ansible&#34;&gt;Task for Today : Installing Ansible&lt;/h2&gt;
+&lt;h4 id=&#34;steps-i-followed-for-installing-ansible&#34;&gt;Steps I followed for installing ansible:&lt;/h4&gt;
+&lt;pre&gt;&lt;code class=&#34;language-Ansible&#34; data-lang=&#34;Ansible&#34;&gt;    $ sudo apt update
+    $ sudo apt install software-properties-common
+    $ sudo add-apt-repository --yes --update ppa:ansible/ansible
+    $ sudo apt install ansible
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;a href=&#34;https://asciinema.org/a/qwlq00fO6NzGqHTS4gvPPGT08&#34;&gt;&lt;img src=&#34;https://asciinema.org/a/qwlq00fO6NzGqHTS4gvPPGT08.svg&#34; alt=&#34;asciicast&#34;&gt;&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;Ran into an error. Looked up the error online and tried to solve it using a command (&lt;a href=&#34;https://askubuntu.com/questions/732985/force-update-from-unsigned-repository)&#34;&gt;https://askubuntu.com/questions/732985/force-update-from-unsigned-repository)&lt;/a&gt;. Tried that below, but to no avail.&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://asciinema.org/a/pt8D9maRVDDk0bIK2r94UKnlN&#34;&gt;&lt;img src=&#34;https://asciinema.org/a/pt8D9maRVDDk0bIK2r94UKnlN.svg&#34; alt=&#34;asciicast&#34;&gt;&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;Tried a different approach after an unsuccessful debugging session.&lt;/p&gt;
+&lt;h5 id=&#34;commands-i-used&#34;&gt;Commands I used&lt;/h5&gt;
+&lt;p&gt;First, we logged onto the server to host Ansible &amp;amp; the following commands were run to update the server and upgrade the kernel.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&#34;language-Alternate&#34; data-lang=&#34;Alternate&#34;&gt;    $ sudo apt-get update
+    $ sudo apt-get upgrade -y
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;After this, we moved on to installing Ansible. The following commands were used:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&#34;language-$&#34; data-lang=&#34;$&#34;&gt;    $ sudo apt-get update
+    $ sudo apt-get install ansible -y
+    $ sudo apt-get install python -y
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The last command was used to install Python. We were encountering the same error but it wasn’t affecting the installation process so we moved on.&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://asciinema.org/a/AbPsjHR8J0fTvL7pTDz8Zi2hF&#34;&gt;&lt;img src=&#34;https://asciinema.org/a/AbPsjHR8J0fTvL7pTDz8Zi2hF.svg&#34; alt=&#34;asciicast&#34;&gt;&lt;/a&gt;&lt;/p&gt;
+
+    </description>
+    </item>
+    
+    <item>
+    <title>10.06.2021</title>
+    <link>https://udaysehgal.github.io/posts/j/</link>
+    <pubDate>Thu, 10 Jun 2021 22:52:03 +0530</pubDate>
+    <author>Uday</author>
+    <guid>https://udaysehgal.github.io/posts/j/</guid>
+    <description>
+        &lt;p&gt;My website was successfully hosted so I moved on to the CI/CD part. I created a new file in .github/workflows/gh-pages.yml in the repository I was working on. I later got an error code. We tried to fix it among ourselves as a lot of us were getting the same error. The site was still being deployed regardless. I searched the web for it but I could not debug it.&lt;/p&gt;
+&lt;p&gt;error&lt;/p&gt;
+
+    </description>
+    </item>
+    
+    <item>
+    <title>09.06.2021</title>
+    <link>https://udaysehgal.github.io/posts/i/</link>
+    <pubDate>Wed, 09 Jun 2021 22:51:55 +0530</pubDate>
+    <author>Uday</author>
+    <guid>https://udaysehgal.github.io/posts/i/</guid>
+    <description>
+        &lt;p&gt;I successfully hosted my website. I ran the hugo command which compiled a public folder which I added to my repository then ran a set of commands to host my website on the udaysehgal.github.io URL. I haven’t added a CI/CD tool yet but I’ll do that in the coming days. I used the tania theme and will be editing it more to make it more personalised in the future.&lt;/p&gt;
+&lt;p&gt;Here is a recording of what I did to host the website. I started with a new repository for this task. (udaysehgal.github.io)&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://asciinema.org/a/2C5widJ5TayjJkmaehcgaKhtK&#34;&gt;&lt;img src=&#34;https://asciinema.org/a/2C5widJ5TayjJkmaehcgaKhtK.svg&#34; alt=&#34;asciicast&#34;&gt;&lt;/a&gt;&lt;/p&gt;
+
+    </description>
+    </item>
+    
+    <item>
+    <title>08.06.2021</title>
+    <link>https://udaysehgal.github.io/posts/h/</link>
+    <pubDate>Tue, 08 Jun 2021 13:25:15 +0530</pubDate>
+    
+    <guid>https://udaysehgal.github.io/posts/h/</guid>
+    <description>
+        &lt;p&gt;I tried to host my website again today using github pages and following a youtube tutoria. The process I employed was creating two new repositories on GitHub. One was used to store the code and here is where I ran into an error. I used the command &amp;ldquo;git submodule add -b main &lt;a href=&#34;https://github.com/udaysehgal/udaysehgal.github.io.git&#34;&gt;https://github.com/udaysehgal/udaysehgal.github.io.git&lt;/a&gt; public&amp;rdquo;&lt;/p&gt;
+&lt;p&gt;My website was deployed but I could not see the posts that I had created. I will be trying some more methods to host it.&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://asciinema.org/a/N7bD3GyWTV8b13bmhQdTDFnNr&#34;&gt;&lt;img src=&#34;https://asciinema.org/a/N7bD3GyWTV8b13bmhQdTDFnNr.svg&#34; alt=&#34;asciicast&#34;&gt;&lt;/a&gt;&lt;/p&gt;
+
+    </description>
+    </item>
+    
+    <item>
+    <title>07.06.2021</title>
+    <link>https://udaysehgal.github.io/posts/g/</link>
+    <pubDate>Tue, 08 Jun 2021 12:48:19 +0530</pubDate>
+    
+    <guid>https://udaysehgal.github.io/posts/g/</guid>
+    <description>
+        &lt;p&gt;I worked around git and learnt a few more commands. I&amp;rsquo;ve been using git for about a week now so I&amp;rsquo;m inculcating it more and more into my workflow each day. I used git rebase today and in the process of trying to host the hugo site, I used some new commands like submodule and a few more.&lt;/p&gt;
+&lt;p&gt;I think I have a better grasp of when to commit now. We had a group discussion about it and I think when to commit is quite a subjective question with an answer that would not work universally. I personally think when substantial changes are made to the file or program, we can commit our changes. Like, say I&amp;rsquo;ve added a javascript file to my existing webpage that have HTML &amp;amp; CSS, I would consider that a substantial change. But that is because I am the only one on that project. Someone may not consider it substantial. So when to commit is a question that everybody has their own answer to and nobody&amp;rsquo;s answer can be considered inherently wrong.&lt;/p&gt;
+&lt;p&gt;Another thing we discussed is why the two step process? We use git add . and then use git commit to make a change. The two step process honestly did confuse me at first but I&amp;rsquo;ve since learned the advantages. It helps us to commit quite a few things together and this helps keeping the project more easy to debug. If I commit for every small change I make, it would create too many logs.&lt;/p&gt;
+
+    </description>
+    </item>
+    
+    <item>
+    <title>05.06.2021</title>
+    <link>https://udaysehgal.github.io/posts/f/</link>
+    <pubDate>Sat, 05 Jun 2021 12:49:15 +0530</pubDate>
+    
+    <guid>https://udaysehgal.github.io/posts/f/</guid>
+    <description>
+        &lt;p&gt;I experimented with hosting the site through various methods but I was unsuccessful. I tried to do so through github actions but I was receiving quite a few errors. I learnt about the CI/CD pipelines and understood them. I understood that CI means continuous integration and is when members of a term integrate their code in a shared repository and we can use git or any other similar application  to do this process. The integration in the repository is checked by an automated unit or some tests. CD stands for Continuous Delivery/Deployment. We run some automated tests to ensure the build can be deployed and can be released.&lt;/p&gt;
+
+    </description>
+    </item>
+    
+    <item>
+    <title>03.06.2021</title>
+    <link>https://udaysehgal.github.io/posts/d/</link>
+    <pubDate>Thu, 03 Jun 2021 12:49:07 +0530</pubDate>
+    
+    <guid>https://udaysehgal.github.io/posts/d/</guid>
+    <description>
+        &lt;p&gt;I installed Hugo today and got around to building my static website. I was curious about what a static website actually is so I searched for the difference between a static website and a dynamic one. So I learnt that a static website is one in which the content is displayed to the viewer as it is stored in the user&amp;rsquo;s web browser. They do not take inputs from the viewer. I then understood that I had been creating static websites earlier as well, but I was just not aware that they were static websites. I have created a few websites in HTML,CSS,JS before this internship but I was just not aware that they were called static websites.&lt;/p&gt;
+&lt;p&gt;I initialised Hugo and downloaded all the files and set up a basic webpage in the time before I made more changes.&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://asciinema.org/a/xzh2qbUXmwTp36kGd31bV6taf&#34;&gt;&lt;img src=&#34;https://asciinema.org/a/xzh2qbUXmwTp36kGd31bV6taf.svg&#34; alt=&#34;asciicast&#34;&gt;&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;This is the part where I embedded the asciicinema link.&lt;/p&gt;
+
+    </description>
+    </item>
+    
+    <item>
+    <title>02.06.2021</title>
+    <link>https://udaysehgal.github.io/posts/c/</link>
+    <pubDate>Wed, 02 Jun 2021 12:49:03 +0530</pubDate>
+    
+    <guid>https://udaysehgal.github.io/posts/c/</guid>
+    <description>
+        &lt;p&gt;I hosted my webpage through GitHub pages today with the help of git and GitHub. I wrote the page in markdown and learnt a little about branches as well. Markdown is something I was not yet familiar with so I learnt a little about that too and I learnt that it was quite similar to HTML with a few exceptions (like an h1 was denoted by a # an h2 with a ##) but that was only in the syntax and not so much in the idea itself.&lt;/p&gt;
+
+    </description>
+    </item>
+    
+    <item>
+    <title>01.06.2021</title>
+    <link>https://udaysehgal.github.io/posts/b/</link>
+    <pubDate>Tue, 01 Jun 2021 12:47:37 +0530</pubDate>
+    
+    <guid>https://udaysehgal.github.io/posts/b/</guid>
+    <description>
+        &lt;p&gt;I installed git today and learnt some basic commands like git clone, git add ., git commit and basically integrated git with my github account. I cloned some repositories and started working in git as much as I could. It is quite similar to a terminal but it is very different. I have yet to learn when to commit properly as I made a lot of commits today which I later thought were quite redundant.&lt;/p&gt;
+
+    </description>
+    </item>
+    
+  </channel>
+</rss>

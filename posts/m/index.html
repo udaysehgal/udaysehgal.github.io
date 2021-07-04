@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en-us">
+    
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="theme-color" content="dark">
+    <title> 16.06.2021 | Uday&#39;s website</title>
+    
+    
+    
+    <link rel="stylesheet" href="/sass/main.min.12754930aaca2409561861a9f13c52153f073ef96d63061a9a330c250f392fcb.css">
+</head>
+
+    <body class="dark">
+        <nav class="navbar">
+    <div class="container">
+        <div class="flex">
+            <div>
+                <a class="brand" href="/">
+                    
+                    Uday&#39;s website
+                    </a>
+            </div>
+            <div class="flex">
+                
+                <a href="/updates/">Updates</a>
+                
+                <button id="dark-mode-button"></button>
+            </div>
+            </div>
+    </div>
+</nav>
+        <main>
+            
+
+<div class="container">
+    <article>
+        <header class="article-header">
+            <div class="thumb">
+                <div>
+                    <h1>16.06.2021</h1>
+                    <div class="post-meta">
+                        <div>
+                            By Uday on <time>June 16, 2021</time>
+                        </div>
+                        <div class="tags">
+                            
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+    </article>
+
+    <div class="article-post">
+    <h3 id="installing-docker">Installing Docker</h3>
+<h3 id="installing-the-repository">Installing the repository</h3>
+<p>Before we install Docker, we need to set up the Docker repository. Later, we will update Docker from this repository.</p>
+<p>First, we update the apt package index through the first command &amp; then we install packages to allow apt to use a repository</p>
+<pre><code>sudo apt-get update
+
+sudo apt-get install \
+apt-transport-https \
+ca-certificates \
+curl \
+gnupg \
+lsb-release
+</code></pre><p>Then we add Docker’s official GPG key:</p>
+<pre><code>curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+</code></pre><script src="https://asciinema.org/a/420852.js" id="asciicast-420852" async></script>
+<p>GPG stands for Gnu Privacy Guard. It is useful for creating public and private keys. These can be used for digital signatures or encryption/decryption.</p>
+<p>The next command is used to set up the stable repository.</p>
+<pre><code>echo \
+  &quot;deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
+  $(lsb_release -cs) stable&quot; | sudo tee /etc/apt/sources.list.d/docker.list &gt; /dev/null
+</code></pre><h5 id="installing-docker-engine">Installing Docker Engine</h5>
+<script src="https://asciinema.org/a/420867.js" id="asciicast-420867" async></script>
+<p>First, we update the apt package index &amp; then install docker &amp; containerd.</p>
+<pre><code>sudo apt-get update
+
+sudo apt-get install docker-ce docker-ce-cli containerd.io
+</code></pre><p>We can also install a specific version of Docker Engine by using the following command:</p>
+<pre><code>apt-cache madison docker-ce
+</code></pre><p>After typing this command, we got the following output:</p>
+<pre><code>docker-ce | 5:20.10.7~3-0~ubuntu-hirsute | https://download.docker.com/linux/ubuntu hirsute/stable amd64 Packages
+docker-ce | 5:20.10.6~3-0~ubuntu-hirsute | https://download.docker.com/linux/ubuntu hirsute/stable amd64 Packages
+</code></pre>
+<p>We can install a specific version using the version string (the text after the first |). The code for that installation is:</p>
+<pre><code>sudo apt-get install docker-ce=&lt;ver_str&gt; docker-ce-cli=&lt;ver_str&gt; containerd.io
+</code></pre><p>where ver_str is the version string</p>
+<p>When we tried to do that, it did not successfully run as we had already installed Docker through the first step.</p>
+<p>Now, to check that Docker has been installed, run the following:</p>
+<pre><code>sudo docker run hello-world
+</code></pre><p>The output should be a message after it downloads a test image from docker &amp; runs it in the container.</p>
+
+    </div>
+</div>
+
+<div class="container">
+    
+    <nav class="flex container suggested">
+        
+        <a rel="prev" href="/posts/l/" title="Previous post (older)">
+            <span>Previous</span>
+            15.06.2021
+            </a>
+        
+        
+        
+        <a rel="next" href="/posts/n/" title="Next post (newer)">
+            <span>Next</span>
+            17.06.2021
+            </a> 
+        
+    </nav>
+    
+</div>
+</main>
+
+
+        </main>
+        <footer class="footer flex">
+    <section class="container">
+        <nav class="footer-links">
+            
+            <a href="/index.xml">RSS</a>
+            
+        </nav>
+    </section>
+    
+    <script async src="/js/features.min.cb54200d744e5e9da0fa39e8ed570c19eac326f18a67904837ffada21795dfe2.js" data-enable-footnotes="true"></script>
+</footer>
+    </body>
+</html>

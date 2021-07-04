@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en-us">
+    
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="theme-color" content="dark">
+    <title> 14.06.2021 | Uday&#39;s website</title>
+    
+    
+    
+    <link rel="stylesheet" href="/sass/main.min.12754930aaca2409561861a9f13c52153f073ef96d63061a9a330c250f392fcb.css">
+</head>
+
+    <body class="dark">
+        <nav class="navbar">
+    <div class="container">
+        <div class="flex">
+            <div>
+                <a class="brand" href="/">
+                    
+                    Uday&#39;s website
+                    </a>
+            </div>
+            <div class="flex">
+                
+                <a href="/updates/">Updates</a>
+                
+                <button id="dark-mode-button"></button>
+            </div>
+            </div>
+    </div>
+</nav>
+        <main>
+            
+
+<div class="container">
+    <article>
+        <header class="article-header">
+            <div class="thumb">
+                <div>
+                    <h1>14.06.2021</h1>
+                    <div class="post-meta">
+                        <div>
+                            By Uday on <time>June 14, 2021</time>
+                        </div>
+                        <div class="tags">
+                            
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+    </article>
+
+    <div class="article-post">
+    <h2 id="task-for-today--installing-ansible">Task for Today : Installing Ansible</h2>
+<h4 id="steps-i-followed-for-installing-ansible">Steps I followed for installing ansible:</h4>
+<pre><code class="language-Ansible" data-lang="Ansible">    $ sudo apt update
+    $ sudo apt install software-properties-common
+    $ sudo add-apt-repository --yes --update ppa:ansible/ansible
+    $ sudo apt install ansible
+</code></pre><p><a href="https://asciinema.org/a/qwlq00fO6NzGqHTS4gvPPGT08"><img src="https://asciinema.org/a/qwlq00fO6NzGqHTS4gvPPGT08.svg" alt="asciicast"></a></p>
+<p>Ran into an error. Looked up the error online and tried to solve it using a command (<a href="https://askubuntu.com/questions/732985/force-update-from-unsigned-repository)">https://askubuntu.com/questions/732985/force-update-from-unsigned-repository)</a>. Tried that below, but to no avail.</p>
+<p><a href="https://asciinema.org/a/pt8D9maRVDDk0bIK2r94UKnlN"><img src="https://asciinema.org/a/pt8D9maRVDDk0bIK2r94UKnlN.svg" alt="asciicast"></a></p>
+<p>Tried a different approach after an unsuccessful debugging session.</p>
+<h5 id="commands-i-used">Commands I used</h5>
+<p>First, we logged onto the server to host Ansible &amp; the following commands were run to update the server and upgrade the kernel.</p>
+<pre><code class="language-Alternate" data-lang="Alternate">    $ sudo apt-get update
+    $ sudo apt-get upgrade -y
+</code></pre><p>After this, we moved on to installing Ansible. The following commands were used:</p>
+<pre><code class="language-$" data-lang="$">    $ sudo apt-get update
+    $ sudo apt-get install ansible -y
+    $ sudo apt-get install python -y
+</code></pre><p>The last command was used to install Python. We were encountering the same error but it wasn’t affecting the installation process so we moved on.</p>
+<p><a href="https://asciinema.org/a/AbPsjHR8J0fTvL7pTDz8Zi2hF"><img src="https://asciinema.org/a/AbPsjHR8J0fTvL7pTDz8Zi2hF.svg" alt="asciicast"></a></p>
+
+    </div>
+</div>
+
+<div class="container">
+    
+    <nav class="flex container suggested">
+        
+        <a rel="prev" href="/posts/j/" title="Previous post (older)">
+            <span>Previous</span>
+            10.06.2021
+            </a>
+        
+        
+        
+        <a rel="next" href="/posts/l/" title="Next post (newer)">
+            <span>Next</span>
+            15.06.2021
+            </a> 
+        
+    </nav>
+    
+</div>
+</main>
+
+
+        </main>
+        <footer class="footer flex">
+    <section class="container">
+        <nav class="footer-links">
+            
+            <a href="/index.xml">RSS</a>
+            
+        </nav>
+    </section>
+    
+    <script async src="/js/features.min.cb54200d744e5e9da0fa39e8ed570c19eac326f18a67904837ffada21795dfe2.js" data-enable-footnotes="true"></script>
+</footer>
+    </body>
+</html>

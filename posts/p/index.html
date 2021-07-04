@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en-us">
+    
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="theme-color" content="dark">
+    <title> 22.06.2021 | Uday&#39;s website</title>
+    
+    
+    
+    <link rel="stylesheet" href="/sass/main.min.12754930aaca2409561861a9f13c52153f073ef96d63061a9a330c250f392fcb.css">
+</head>
+
+    <body class="dark">
+        <nav class="navbar">
+    <div class="container">
+        <div class="flex">
+            <div>
+                <a class="brand" href="/">
+                    
+                    Uday&#39;s website
+                    </a>
+            </div>
+            <div class="flex">
+                
+                <a href="/updates/">Updates</a>
+                
+                <button id="dark-mode-button"></button>
+            </div>
+            </div>
+    </div>
+</nav>
+        <main>
+            
+
+<div class="container">
+    <article>
+        <header class="article-header">
+            <div class="thumb">
+                <div>
+                    <h1>22.06.2021</h1>
+                    <div class="post-meta">
+                        <div>
+                            By Uday on <time>June 22, 2021</time>
+                        </div>
+                        <div class="tags">
+                            
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+    </article>
+
+    <div class="article-post">
+    <h3 id="task-installing-terraform--working-with-aws">Task: Installing Terraform &amp; Working with AWS</h3>
+<h4 id="installing-terraform">Installing Terraform</h4>
+<p>We tried to install Terraform using these set of commands: (mentioned on the official website)</p>
+<pre><code>sudo apt-get update  
+sudo apt-get install -y gnupg software-properties-common curl
+curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+sudo apt-add-repository &quot;deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main&quot;
+sudo apt-get update 
+sudo apt-get install terraform
+</code></pre><script src="https://asciinema.org/a/421939.js" id="asciicast-421939" async></script>
+<p>But, we were having an issue with the second command (apt-key). We moved towards manual installation as we had faced a similar type of error earlier as well and we couldn&rsquo;t debug it.</p>
+<p>For the manual installation, we simply downloaded the package &amp; unzipped it. We need to change the location of the binary terraform. We use the following set of commands:</p>
+<pre><code>echo $PATH
+mv ~/Downloads/terraform /usr/local/bin/
+</code></pre><p>This moves the terraform binary to our required location.</p>
+<script src="https://asciinema.org/a/421942.js" id="asciicast-421942" async></script>
+<h4 id="installing-aws-client">Installing aws client</h4>
+<p>We follow these sets of commands to install the aws client</p>
+<pre><code>curl &quot;https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip&quot; -o &quot;awscliv2.zip&quot;
+unzip awscliv2.zip
+sudo ./aws/install
+</code></pre><script src="https://asciinema.org/a/421966.js" id="asciicast-421966" async></script>
+<p>After this, we need to enter our access keys on the aws cli. For that we first enter the command &amp; then our access keys as well as secret access key.</p>
+<pre><code>aws configure
+</code></pre><p>(The recording has not been uploaded for the above process for obvious purposes)</p>
+<p>Our AWS cli is ready to use and we can start using it!</p>
+
+    </div>
+</div>
+
+<div class="container">
+    
+    <nav class="flex container suggested">
+        
+        <a rel="prev" href="/posts/n/" title="Previous post (older)">
+            <span>Previous</span>
+            17.06.2021
+            </a>
+        
+        
+        
+        <a rel="next" href="/posts/q/" title="Next post (newer)">
+            <span>Next</span>
+            24.06.2021
+            </a> 
+        
+    </nav>
+    
+</div>
+</main>
+
+
+        </main>
+        <footer class="footer flex">
+    <section class="container">
+        <nav class="footer-links">
+            
+            <a href="/index.xml">RSS</a>
+            
+        </nav>
+    </section>
+    
+    <script async src="/js/features.min.cb54200d744e5e9da0fa39e8ed570c19eac326f18a67904837ffada21795dfe2.js" data-enable-footnotes="true"></script>
+</footer>
+    </body>
+</html>

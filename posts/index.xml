@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Posts on Uday&#39;s website</title>
+    <link>https://udaysehgal.github.io/posts/</link>
+    <description>Recent content in Posts on Uday&#39;s website</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sun, 04 Jul 2021 22:31:34 +0530</lastBuildDate><atom:link href="https://udaysehgal.github.io/posts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>02.07.2021</title>
+      <link>https://udaysehgal.github.io/posts/t/</link>
+      <pubDate>Sun, 04 Jul 2021 22:31:34 +0530</pubDate>
+      
+      <guid>https://udaysehgal.github.io/posts/t/</guid>
+      <description>Deploying Kubernetes on AWS Creating the Instances We will use the AWS console to create 3 instances and later use them for Kubernetes. The steps for the following are mentioned below:
+  Firstly, we will launch an EC2 instance like we usually and configure it so that it launches 3 identical instances.
+  We create a key pair (this is important for connecting to it later) and download it.</description>
+    </item>
+    
+    <item>
+      <title>30.06.2021</title>
+      <link>https://udaysehgal.github.io/posts/s/</link>
+      <pubDate>Wed, 30 Jun 2021 14:40:51 +0530</pubDate>
+      
+      <guid>https://udaysehgal.github.io/posts/s/</guid>
+      <description>Creating a VPC using Terraform After we have manually created a VPC using the wizard, we will now create a VPC using terraform and AWS client.
+Creating the necessary files We first create a new directory &amp;amp; change inside it
+mkdir terraform-vpc_1 cd terraform-vpc_1 Now, we need to create a main.tf file. We use the command:
+touch main.tf This file will house our resources which we need to create a VPC.</description>
+    </item>
+    
+    <item>
+      <title>29.06.2021</title>
+      <link>https://udaysehgal.github.io/posts/r/</link>
+      <pubDate>Tue, 29 Jun 2021 18:16:12 +0530</pubDate>
+      
+      <guid>https://udaysehgal.github.io/posts/r/</guid>
+      <description>Tasks for today: Using AWS Cli for creating a VPC We have already worked &amp;amp; documented creating an EC2 instance on the Amazon cloud server earlier. We now move on to using the client for creating a VPC.
+A VPC (Virtual Private Cloud) is basically a private virtual network which lets us launch our resources inside it. It is useful for providing a sort of isolation from the devices on the original public cloud server (eg.</description>
+    </item>
+    
+    <item>
+      <title>24.06.2021</title>
+      <link>https://udaysehgal.github.io/posts/q/</link>
+      <pubDate>Thu, 24 Jun 2021 21:16:22 +0530</pubDate>
+      
+      <guid>https://udaysehgal.github.io/posts/q/</guid>
+      <description>Creating a VM in AWS using Terraform We will now create a file using Terraform that defines a single AWS EC2 instance.
+First, we make a new directory and change into it to make it our working directory
+mkdir terraform-aws cd terraform-aws We now create a new .tf file inside this
+touch main.tf We open the file &amp;amp; paste the following code inside it:
+terraform { required_providers { aws = { source = &amp;#34;hashicorp/aws&amp;#34; version = &amp;#34;~&amp;gt; 3.</description>
+    </item>
+    
+    <item>
+      <title>22.06.2021</title>
+      <link>https://udaysehgal.github.io/posts/p/</link>
+      <pubDate>Tue, 22 Jun 2021 21:16:19 +0530</pubDate>
+      
+      <guid>https://udaysehgal.github.io/posts/p/</guid>
+      <description>Task: Installing Terraform &amp;amp; Working with AWS Installing Terraform We tried to install Terraform using these set of commands: (mentioned on the official website)
+sudo apt-get update sudo apt-get install -y gnupg software-properties-common curl curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add - sudo apt-add-repository &amp;quot;deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main&amp;quot; sudo apt-get update sudo apt-get install terraform  But, we were having an issue with the second command (apt-key). We moved towards manual installation as we had faced a similar type of error earlier as well and we couldn&amp;rsquo;t debug it.</description>
+    </item>
+    
+    <item>
+      <title>17.06.2021</title>
+      <link>https://udaysehgal.github.io/posts/n/</link>
+      <pubDate>Thu, 17 Jun 2021 11:54:51 +0530</pubDate>
+      
+      <guid>https://udaysehgal.github.io/posts/n/</guid>
+      <description>Deploying an Nginx inside Docker Container First, we need to see the images present on our system. For that, we do
+docker images When we run this command, we get an error. This is because we need to run every docker command through sudo since we have not added any users to the docker group.
+ Now, we run the correct command:
+sudo docker images A list of images is obtained.</description>
+    </item>
+    
+    <item>
+      <title>16.06.2021</title>
+      <link>https://udaysehgal.github.io/posts/m/</link>
+      <pubDate>Wed, 16 Jun 2021 11:54:56 +0530</pubDate>
+      
+      <guid>https://udaysehgal.github.io/posts/m/</guid>
+      <description>Installing Docker Installing the repository Before we install Docker, we need to set up the Docker repository. Later, we will update Docker from this repository.
+First, we update the apt package index through the first command &amp;amp; then we install packages to allow apt to use a repository
+sudo apt-get update sudo apt-get install \ apt-transport-https \ ca-certificates \ curl \ gnupg \ lsb-release Then we add Docker’s official GPG key:</description>
+    </item>
+    
+    <item>
+      <title>15.06.2021</title>
+      <link>https://udaysehgal.github.io/posts/l/</link>
+      <pubDate>Tue, 15 Jun 2021 22:52:07 +0530</pubDate>
+      
+      <guid>https://udaysehgal.github.io/posts/l/</guid>
+      <description>Configuring SSH on Ansible Now, we move on to to make it possible for our node to access the Ansible server. We do this via SSH. We generate a SSH key with the command:
+$ ssh-keygen 
+A default name is kept for the file without a password. We display the contents of the public key with the command:
+$ cat ~/.ssh/id_rsa.pub Our next plan of action would be to copy the text that’s displayed and log into our node server.</description>
+    </item>
+    
+    <item>
+      <title>14.06.2021</title>
+      <link>https://udaysehgal.github.io/posts/k/</link>
+      <pubDate>Mon, 14 Jun 2021 22:52:10 +0530</pubDate>
+      
+      <guid>https://udaysehgal.github.io/posts/k/</guid>
+      <description>Task for Today : Installing Ansible Steps I followed for installing ansible: $ sudo apt update $ sudo apt install software-properties-common $ sudo add-apt-repository --yes --update ppa:ansible/ansible $ sudo apt install ansible 
+Ran into an error. Looked up the error online and tried to solve it using a command (https://askubuntu.com/questions/732985/force-update-from-unsigned-repository). Tried that below, but to no avail.
+
+Tried a different approach after an unsuccessful debugging session.
+Commands I used First, we logged onto the server to host Ansible &amp;amp; the following commands were run to update the server and upgrade the kernel.</description>
+    </item>
+    
+    <item>
+      <title>10.06.2021</title>
+      <link>https://udaysehgal.github.io/posts/j/</link>
+      <pubDate>Thu, 10 Jun 2021 22:52:03 +0530</pubDate>
+      
+      <guid>https://udaysehgal.github.io/posts/j/</guid>
+      <description>My website was successfully hosted so I moved on to the CI/CD part. I created a new file in .github/workflows/gh-pages.yml in the repository I was working on. I later got an error code. We tried to fix it among ourselves as a lot of us were getting the same error. The site was still being deployed regardless. I searched the web for it but I could not debug it.
+error</description>
+    </item>
+    
+    <item>
+      <title>09.06.2021</title>
+      <link>https://udaysehgal.github.io/posts/i/</link>
+      <pubDate>Wed, 09 Jun 2021 22:51:55 +0530</pubDate>
+      
+      <guid>https://udaysehgal.github.io/posts/i/</guid>
+      <description>I successfully hosted my website. I ran the hugo command which compiled a public folder which I added to my repository then ran a set of commands to host my website on the udaysehgal.github.io URL. I haven’t added a CI/CD tool yet but I’ll do that in the coming days. I used the tania theme and will be editing it more to make it more personalised in the future.
+Here is a recording of what I did to host the website.</description>
+    </item>
+    
+    <item>
+      <title>08.06.2021</title>
+      <link>https://udaysehgal.github.io/posts/h/</link>
+      <pubDate>Tue, 08 Jun 2021 13:25:15 +0530</pubDate>
+      
+      <guid>https://udaysehgal.github.io/posts/h/</guid>
+      <description>I tried to host my website again today using github pages and following a youtube tutoria. The process I employed was creating two new repositories on GitHub. One was used to store the code and here is where I ran into an error. I used the command &amp;ldquo;git submodule add -b main https://github.com/udaysehgal/udaysehgal.github.io.git public&amp;rdquo;
+My website was deployed but I could not see the posts that I had created. I will be trying some more methods to host it.</description>
+    </item>
+    
+    <item>
+      <title>07.06.2021</title>
+      <link>https://udaysehgal.github.io/posts/g/</link>
+      <pubDate>Tue, 08 Jun 2021 12:48:19 +0530</pubDate>
+      
+      <guid>https://udaysehgal.github.io/posts/g/</guid>
+      <description>I worked around git and learnt a few more commands. I&amp;rsquo;ve been using git for about a week now so I&amp;rsquo;m inculcating it more and more into my workflow each day. I used git rebase today and in the process of trying to host the hugo site, I used some new commands like submodule and a few more.
+I think I have a better grasp of when to commit now. We had a group discussion about it and I think when to commit is quite a subjective question with an answer that would not work universally.</description>
+    </item>
+    
+    <item>
+      <title>05.06.2021</title>
+      <link>https://udaysehgal.github.io/posts/f/</link>
+      <pubDate>Sat, 05 Jun 2021 12:49:15 +0530</pubDate>
+      
+      <guid>https://udaysehgal.github.io/posts/f/</guid>
+      <description>I experimented with hosting the site through various methods but I was unsuccessful. I tried to do so through github actions but I was receiving quite a few errors. I learnt about the CI/CD pipelines and understood them. I understood that CI means continuous integration and is when members of a term integrate their code in a shared repository and we can use git or any other similar application to do this process.</description>
+    </item>
+    
+    <item>
+      <title>03.06.2021</title>
+      <link>https://udaysehgal.github.io/posts/d/</link>
+      <pubDate>Thu, 03 Jun 2021 12:49:07 +0530</pubDate>
+      
+      <guid>https://udaysehgal.github.io/posts/d/</guid>
+      <description>I installed Hugo today and got around to building my static website. I was curious about what a static website actually is so I searched for the difference between a static website and a dynamic one. So I learnt that a static website is one in which the content is displayed to the viewer as it is stored in the user&amp;rsquo;s web browser. They do not take inputs from the viewer.</description>
+    </item>
+    
+    <item>
+      <title>02.06.2021</title>
+      <link>https://udaysehgal.github.io/posts/c/</link>
+      <pubDate>Wed, 02 Jun 2021 12:49:03 +0530</pubDate>
+      
+      <guid>https://udaysehgal.github.io/posts/c/</guid>
+      <description>I hosted my webpage through GitHub pages today with the help of git and GitHub. I wrote the page in markdown and learnt a little about branches as well. Markdown is something I was not yet familiar with so I learnt a little about that too and I learnt that it was quite similar to HTML with a few exceptions (like an h1 was denoted by a # an h2 with a ##) but that was only in the syntax and not so much in the idea itself.</description>
+    </item>
+    
+    <item>
+      <title>01.06.2021</title>
+      <link>https://udaysehgal.github.io/posts/b/</link>
+      <pubDate>Tue, 01 Jun 2021 12:47:37 +0530</pubDate>
+      
+      <guid>https://udaysehgal.github.io/posts/b/</guid>
+      <description>I installed git today and learnt some basic commands like git clone, git add ., git commit and basically integrated git with my github account. I cloned some repositories and started working in git as much as I could. It is quite similar to a terminal but it is very different. I have yet to learn when to commit properly as I made a lot of commits today which I later thought were quite redundant.</description>
+    </item>
+    
+  </channel>
+</rss>

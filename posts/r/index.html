@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en-us">
+    
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="theme-color" content="dark">
+    <title> 29.06.2021 | Uday&#39;s website</title>
+    
+    
+    
+    <link rel="stylesheet" href="/sass/main.min.12754930aaca2409561861a9f13c52153f073ef96d63061a9a330c250f392fcb.css">
+</head>
+
+    <body class="dark">
+        <nav class="navbar">
+    <div class="container">
+        <div class="flex">
+            <div>
+                <a class="brand" href="/">
+                    
+                    Uday&#39;s website
+                    </a>
+            </div>
+            <div class="flex">
+                
+                <a href="/updates/">Updates</a>
+                
+                <button id="dark-mode-button"></button>
+            </div>
+            </div>
+    </div>
+</nav>
+        <main>
+            
+
+<div class="container">
+    <article>
+        <header class="article-header">
+            <div class="thumb">
+                <div>
+                    <h1>29.06.2021</h1>
+                    <div class="post-meta">
+                        <div>
+                            By Uday on <time>June 29, 2021</time>
+                        </div>
+                        <div class="tags">
+                            
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+    </article>
+
+    <div class="article-post">
+    <h2 id="tasks-for-today-using-aws-cli-for-creating-a-vpc">Tasks for today: Using AWS Cli for creating a VPC</h2>
+<p>We have already worked &amp; documented creating an EC2 instance on the Amazon cloud server earlier. We now move on to using the client for creating a VPC.</p>
+<p>A VPC (Virtual Private Cloud) is basically a private virtual network which lets us launch our resources inside it. It is useful for providing a sort of isolation from the devices on the original public cloud server (eg.AWS in this case)</p>
+<p>First, we will try running a VPC manually &amp; then using Terraform. Later, we will also create an instance inside our VPC.</p>
+<h4 id="vpc-using-the-aws-console">VPC using the AWS Console</h4>
+<ul>
+<li>The first thing that we do is open the Amazon VPC console (<a href="https://console.aws.amazon.com/vpc/)">https://console.aws.amazon.com/vpc/)</a>. We need to select a VPC Configuration. We will be choosing the VPC with a Single Public Subnet option. ublic subnet instances use Public IPs to access the Internet.
+It uses a /16 network with a /24 subnet.</li>
+</ul>
+<p>/16 refers to a 16 IPv4 CIDR block (a network with 65,536 private IP addresses) while</p>
+<p>/24 refers to a size /24 IPv4 subnet (a range of 256 private IP addresses)</p>
+<ul>
+<li>
+<p>The next step is to name the VPC &amp; the subnet. We would not be changing any of the autofilled data except for the name of the VPC &amp; the Subnet.</p>
+</li>
+<li>
+<p>We click on create VPC and the VPC should be successfully created!</p>
+</li>
+</ul>
+<p><img src="https://user-images.githubusercontent.com/85174329/123818273-79266780-d916-11eb-9edc-837cff4e770c.png" alt="vpc_1"></p>
+<h5 id="creating-an-instance-inside-our-vpc">Creating an instance inside our VPC</h5>
+<p>Now, we move on to launching an instance inside the VPC we have just created.</p>
+<ul>
+<li>We open the amazon VPC console and click on Launch Instance.</li>
+<li>Next, we have to choose an AMI. In this case, we choose Amazon Linux 2 AMI (HVM), SSD Volume Type - ami-0721c9af7b9b75114 (64-bit x86)</li>
+<li>Now, we choose the Instance type which in this case is t2.micro. Click on Review &amp; Launch</li>
+<li>On the Configure Instance Details page, we need select the VPC and the subnet that we created. We leave the rest of the settings unchanged &amp; move on.</li>
+<li>Optionally, we can add a name to our instance through the Add Tags page. This helps us identify our instance later. This does not affect the functioning of the instance.</li>
+<li>We do not need to change any settings on the Configure Security Group page.</li>
+<li>Next, on the Review Instance Launch page, we choose Launch.</li>
+<li>A dialog box appears that says &ldquo;Select an existing key pair or create a new key pair&rdquo;. We will create a new key pair and download it to our device. This will be required to connect to our instance after it has been launched.</li>
+<li>We can click on View Instances on the Instances page to see that our instance has been successfully launched.</li>
+</ul>
+<p>We get an error that says the instance cannot be launched as the t2.micro is not available in the region we are working on. We need to change our region and create a new VPC there as this one won&rsquo;t work for the other region.</p>
+<p><img src="https://user-images.githubusercontent.com/85174329/123816768-3617c480-d915-11eb-886c-c7aa06b6e683.png" alt="error_1"></p>
+<p>After we do that, we get a confirmation message.</p>
+<p><img src="https://user-images.githubusercontent.com/85174329/123818343-89d6dd80-d916-11eb-95b3-e3b10019a4d6.png" alt="launch_1"></p>
+<p>We have successfully created an instance inside our own VPC!</p>
+<p>Next, we need to stop/terminate the instance as well as delete the VPC to ensure the AWS resources aren&rsquo;t wasted.</p>
+<p>This shows us that the instance we ran was inside the VPC. (The VPC ID &amp; the Subnet ID in the image match the original IDs)</p>
+<p><img src="https://user-images.githubusercontent.com/85174329/123818013-441a1500-d916-11eb-8164-8890c8dedce8.png" alt="instanceVPC"></p>
+<p>Our next step would be automating this whole process using Terraform.</p>
+
+    </div>
+</div>
+
+<div class="container">
+    
+    <nav class="flex container suggested">
+        
+        <a rel="prev" href="/posts/q/" title="Previous post (older)">
+            <span>Previous</span>
+            24.06.2021
+            </a>
+        
+        
+        
+        <a rel="next" href="/posts/s/" title="Next post (newer)">
+            <span>Next</span>
+            30.06.2021
+            </a> 
+        
+    </nav>
+    
+</div>
+</main>
+
+
+        </main>
+        <footer class="footer flex">
+    <section class="container">
+        <nav class="footer-links">
+            
+            <a href="/index.xml">RSS</a>
+            
+        </nav>
+    </section>
+    
+    <script async src="/js/features.min.cb54200d744e5e9da0fa39e8ed570c19eac326f18a67904837ffada21795dfe2.js" data-enable-footnotes="true"></script>
+</footer>
+    </body>
+</html>
