@@ -5,7 +5,18 @@
     <description>Recent content on Uday&#39;s website</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 04 Jul 2021 22:31:34 +0530</lastBuildDate><atom:link href="https://udaysehgal.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 26 Aug 2026 12:00:00 +0530</lastBuildDate><atom:link href="https://udaysehgal.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+    <title>Building DinoDB: a sharded, multi-threaded key-value store in C++</title>
+    <link>https://udaysehgal.github.io/posts/dinodb/</link>
+    <pubDate>Wed, 26 Aug 2026 12:00:00 +0530</pubDate>
+    <author>Uday</author>
+    <guid>https://udaysehgal.github.io/posts/dinodb/</guid>
+    <description>
+        &lt;p&gt;DinoDB is a from-scratch, Redis-protocol-compatible in-memory key-value store written in C++, built around a sharded &lt;code&gt;std::shared_mutex&lt;/code&gt; store instead of a single global lock or lock-free epoch reclamation. This post walks through the networking layer, the RESP parser, the sharded store, and the snapshot persistence format, and compares the design against Redis&#39;s single-threaded model.&lt;/p&gt;
+&lt;p&gt;Full source: &lt;a href=&#34;https://github.com/udaysehgal/dinodb&#34;&gt;github.com/udaysehgal/dinodb&lt;/a&gt;&lt;/p&gt;
+    </description>
+    </item>
     <item>
     <title>02.07.2021</title>
     <link>https://udaysehgal.github.io/posts/t/</link>

@@ -6,12 +6,20 @@
     <description>Recent content in Posts on Uday&#39;s website</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 04 Jul 2021 22:31:34 +0530</lastBuildDate><atom:link href="https://udaysehgal.github.io/posts/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 26 Aug 2026 12:00:00 +0530</lastBuildDate><atom:link href="https://udaysehgal.github.io/posts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Building DinoDB: a sharded, multi-threaded key-value store in C++</title>
+      <link>https://udaysehgal.github.io/posts/dinodb/</link>
+      <pubDate>Wed, 26 Aug 2026 12:00:00 +0530</pubDate>
+
+      <guid>https://udaysehgal.github.io/posts/dinodb/</guid>
+      <description>DinoDB is a from-scratch, Redis-protocol-compatible in-memory key-value store written in C++, built around a sharded std::shared_mutex store instead of a single global lock or lock-free epoch reclamation. This post walks through the networking layer, the RESP parser, the sharded store, and the snapshot persistence format, and compares the design against Redis&#39;s single-threaded model. Full source: https://github.com/udaysehgal/dinodb</description>
+    </item>
     <item>
       <title>02.07.2021</title>
       <link>https://udaysehgal.github.io/posts/t/</link>
       <pubDate>Sun, 04 Jul 2021 22:31:34 +0530</pubDate>
-      
+
       <guid>https://udaysehgal.github.io/posts/t/</guid>
       <description>Deploying Kubernetes on AWS Creating the Instances We will use the AWS console to create 3 instances and later use them for Kubernetes. The steps for the following are mentioned below:
   Firstly, we will launch an EC2 instance like we usually and configure it so that it launches 3 identical instances.

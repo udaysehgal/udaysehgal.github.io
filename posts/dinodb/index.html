@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en-us">
+
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="theme-color" content="dark">
+    <title>Building DinoDB: a sharded, multi-threaded key-value store in C++ | Uday&#39;s website</title>
+
+
+
+    <link rel="stylesheet" href="/sass/main.min.12754930aaca2409561861a9f13c52153f073ef96d63061a9a330c250f392fcb.css">
+</head>
+
+    <body class="dark">
+        <nav class="navbar">
+    <div class="container">
+        <div class="flex">
+            <div>
+                <a class="brand" href="/">
+
+                    Uday&#39;s website
+                    </a>
+            </div>
+            <div class="flex">
+
+                <a href="/updates/">Updates</a>
+
+                <button id="dark-mode-button"></button>
+            </div>
+            </div>
+    </div>
+</nav>
+        <main>
+
+
+<div class="container">
+    <article>
+        <header class="article-header">
+            <div class="thumb">
+                <div>
+                    <h1>Building DinoDB: a sharded, multi-threaded key-value store in C++</h1>
+                    <div class="post-meta">
+                        <div>
+                            By Uday on <time>August 26, 2026</time> &middot; ~20 min read
+                        </div>
+                        <div class="tags">
+                            <span>c++</span> &middot; <span>systems</span> &middot; <span>concurrency</span> &middot; <span>networking</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+    </article>
+
+    <div class="article-post">
+
+    <h2 id="why-build-another-redis">Why build another Redis</h2>
+    <p>Redis&#39;s core trick is deceptively simple: run every command on a single thread. No locks, no races, no torn reads &mdash; the entire data structure engine gets to pretend concurrency doesn&#39;t exist, because from its point of view it doesn&#39;t. That buys enormous simplicity, and for years it was also fast enough, because a single core can push millions of simple operations per second and the network stack is usually the real bottleneck anyway.</p>
+    <p>But &ldquo;fast enough&rdquo; has a ceiling, and the ceiling is one core. If your workload is CPU-bound &mdash; big <code>ZRANGE</code> scans, large hash operations, many concurrent clients each doing real work &mdash; a single-threaded engine simply cannot use the seven other cores sitting idle next to it. Redis&#39;s own answer, over the years, has been to lean on clustering (shard across <em>processes</em>, not threads) rather than take on internal concurrency.</p>
+    <p>DinoDB asks a narrower question: what does an in-memory KV store look like if you <em>do</em> let multiple threads execute commands at once, and pay for that with real synchronization instead of getting it for free? Not lock-free, epoch-reclaimed, seqlock-validated concurrency &mdash; that&#39;s a different, much harder project &mdash; but the simplest thing that can plausibly work: <strong>partition the keyspace into shards, put a reader-writer lock on each one, and let unrelated keys never see each other&#39;s locks.</strong></p>
+    <p>This post walks through how that&#39;s built, from the wire protocol up to the on-disk snapshot format. Source is on <a href="https://github.com/udaysehgal/dinodb" target="_blank" rel="noreferrer">GitHub</a>.</p>
+
+    <h2 id="design-goals">Design goals</h2>
+    <ol>
+        <li><strong>Speak RESP</strong> &mdash; <code>redis-cli</code> and any standard Redis client library should be able to talk to it with zero adaptation.</li>
+        <li><strong>Real parallelism, not the illusion of it</strong> &mdash; two clients touching two different keys should never wait on each other, on any code path.</li>
+        <li><strong>A codebase one person can hold in their head</strong> &mdash; every subsystem (parser, store, dispatcher, reactor, persistence) is small, has one job, and is unit-testable in isolation.</li>
+        <li><strong>Boring, portable primitives</strong> &mdash; <code>std::shared_mutex</code>, <code>poll()</code>, plain TCP sockets. No lock-free tricks, no platform-specific event APIs, no external dependencies beyond the C++ standard library.</li>
+    </ol>
+
+    <h2 id="architecture-overview">Architecture overview</h2>
+    <p>Four layers, each one only aware of the layer directly below it:</p>
+
+    <pre class="mermaid">
+flowchart TB
+    subgraph net["Networking"]
+        A["Acceptor thread\naccept() loop"]
+        W1["Worker 0\npoll() loop"]
+        W2["Worker 1\npoll() loop"]
+        WN["Worker N-1\npoll() loop"]
+    end
+    subgraph proto["Protocol"]
+        P["RESP streaming parser\n+ reply encoder"]
+    end
+    subgraph exec["Command dispatch"]
+        D["dispatch(cmd, args)\n~40 command handlers"]
+    end
+    subgraph data["Sharded store"]
+        S0["Shard 0\nshared_mutex + hashmap"]
+        S1["Shard 1\nshared_mutex + hashmap"]
+        SN["Shard 31\nshared_mutex + hashmap"]
+    end
+
+    A -- "round-robin new fd" --> W1
+    A --> W2
+    A --> WN
+    W1 --> P
+    W2 --> P
+    WN --> P
+    P --> D
+    D --> S0
+    D --> S1
+    D --> SN
+    </pre>
+
+    <ul>
+        <li><strong>Networking</strong> owns file descriptors and nothing else. One acceptor thread blocks on <code>accept()</code>; every new connection is handed to one of N worker threads round-robin. Each worker runs its own <code>poll()</code> loop over the connections it owns &mdash; no connection is ever touched by more than one thread, so the networking layer itself needs zero locks.</li>
+        <li><strong>Protocol</strong> turns bytes into requests and replies back into bytes. It knows nothing about what a <code>SET</code> does.</li>
+        <li><strong>Dispatch</strong> knows what every command does, but not how bytes got to it or where the store&#39;s locks live.</li>
+        <li><strong>The sharded store</strong> is the only place a mutex is ever taken.</li>
+    </ul>
+    <p>Each layer being ignorant of the ones above it is what makes the whole thing unit-testable without spinning up a socket &mdash; the test suite calls <code>dispatch()</code> directly against a <code>Store</code> and never touches the network at all.</p>
+
+    <h2 id="the-store">The store: sharding instead of one big lock</h2>
+    <p>The naive version of a thread-safe hash map is <code>std::mutex</code> plus <code>std::unordered_map</code>. It works, and it also means every single command &mdash; <code>GET</code>, <code>SET</code>, <code>TTL</code>, doesn&#39;t matter &mdash; serializes behind the same lock. At that point the extra worker threads are pure overhead: you&#39;ve built a single-threaded database with more context-switching.</p>
+    <p>DinoDB instead fixes the shard count at 32 and hashes every key into exactly one of them:</p>
+
+    <pre><code class="language-cpp">class Shard {
+public:
+    std::shared_mutex mtx;
+    std::unordered_map&lt;std::string, Entry&gt; map;
+};
+
+Shard&amp; Store::shard_for(const std::string&amp; key) {
+    size_t h = hasher_(key);
+    return *shards_[h % shards_.size()];
+}</code></pre>
+
+    <p>Every read (<code>GET</code>, <code>HGET</code>, <code>TTL</code>, ...) takes a <code>shared_lock</code> on exactly one shard; every write (<code>SET</code>, <code>DEL</code>, <code>LPUSH</code>, ...) takes a <code>unique_lock</code> on exactly one shard. Two clients hitting different shards never block each other &mdash; including two writers. Two clients hitting the <em>same</em> key still serialize, same as Redis&#39;s single global thread would, but now that&#39;s the exception, not the rule:</p>
+
+    <pre class="mermaid">
+sequenceDiagram
+    participant C1 as Client A: SET foo 1
+    participant C2 as Client B: SET bar 2
+    participant SF as Shard(foo)
+    participant SB as Shard(bar)
+    C1->>SF: unique_lock
+    C2->>SB: unique_lock
+    Note over SF,SB: Different shards -> no contention, run in parallel
+    SF-->>C1: OK
+    SB-->>C2: OK
+    </pre>
+
+    <p>With 32 shards and a reasonable hash distribution, two random keys land in the same shard about 1-in-32 of the time &mdash; contention drops roughly linearly with shard count, at the cost of 32 mutexes&#39; worth of memory and a hash computation per lookup. That&#39;s the whole trade: DinoDB is choosing <em>coarse, cheap, well-understood</em> parallelism over <em>fine-grained, expensive, hard-to-verify</em> parallelism.</p>
+
+    <h3 id="what-lives-in-a-shard">What actually lives in a shard</h3>
+    <p>Rather than a tagged union of heap-allocated containers, every key maps to one fixed-layout <code>Value</code> struct big enough to hold any of the five supported types:</p>
+
+    <pre><code class="language-cpp">struct Value {
+    ValueType type;                              // which field is "live"
+    std::string str;                              // String
+    std::unordered_map&lt;std::string, std::string&gt; hash;  // Hash
+    std::deque&lt;std::string&gt; list;                  // List
+    std::unordered_set&lt;std::string&gt; set;            // Set
+    std::unordered_map&lt;std::string, double&gt; zscores; // ZSet: member -&gt; score
+    std::multimap&lt;double, std::string&gt; zorder;       // ZSet: score -&gt; member
+};
+
+struct Entry {
+    Value value;
+    std::optional&lt;std::chrono::system_clock::time_point&gt; expires_at;
+};</code></pre>
+
+    <p>This is a deliberate simplification versus e.g. Redis&#39;s <code>listpack</code>/<code>intset</code>/<code>embstr</code> family of size-tuned encodings, or an epoch-reclaimed structure that hands back memory to other threads lazily. Every key here costs roughly <code>sizeof(Value)</code> regardless of whether it holds a 3-byte string or a 10,000-entry hash &mdash; noticeably more memory overhead per key, in exchange for an ownership model simple enough that there is no reclamation problem to solve at all: a <code>std::unique_lock</code> is held, the struct is mutated in place, the lock is released. No epochs, no hazard pointers, no deferred frees.</p>
+    <p>Sorted sets get two structures instead of one specifically so that <code>ZRANGE</code> (score-ordered) doesn&#39;t have to sort on every call: <code>zscores</code> answers &ldquo;what&#39;s this member&#39;s score&rdquo; in O(1), and <code>zorder</code> &mdash; a <code>std::multimap&lt;double, std::string&gt;</code> &mdash; keeps the score-sorted view maintained incrementally on every insert/update/remove:</p>
+
+    <pre><code class="language-cpp">void zset_put(const std::string&amp; member, double score) {
+    auto it = zscores.find(member);
+    if (it != zscores.end()) {
+        // erase the stale (old_score -&gt; member) entry from zorder first
+        auto range = zorder.equal_range(it-&gt;second);
+        for (auto r = range.first; r != range.second; ++r)
+            if (r-&gt;second == member) { zorder.erase(r); break; }
+        it-&gt;second = score;
+    } else {
+        zscores.emplace(member, score);
+    }
+    zorder.emplace(score, member);
+}</code></pre>
+
+    <h3 id="lazy-expiry">Lazy expiry</h3>
+    <p>TTLs are not swept by a background thread. Every read path (<code>get_mut</code>, <code>exists</code>, <code>ttl_seconds</code>, ...) checks <code>expires_at</code> against <code>now()</code> under the shard&#39;s lock it already had to take anyway, and evicts the entry on the spot if it&#39;s stale:</p>
+
+    <pre><code class="language-cpp">Entry* Store::get_mut(const std::string&amp; key) {
+    Shard&amp; s = shard_for(key);
+    std::unique_lock lock(s.mtx);
+    auto it = s.map.find(key);
+    if (it == s.map.end()) return nullptr;
+    if (it-&gt;second.expired(std::chrono::system_clock::now())) {
+        s.map.erase(it);
+        return nullptr;
+    }
+    return &amp;it-&gt;second;
+}</code></pre>
+
+    <p>The cost is that a key nobody ever reads again outlives its TTL forever in memory. That&#39;s an acceptable trade for this project&#39;s scope &mdash; a background reaper thread is a natural next step, and it slots in cleanly because it would just call the same <code>for_each</code> used by <code>KEYS</code> and snapshotting.</p>
+
+    <h2 id="the-wire">The wire: a streaming RESP parser</h2>
+    <p>Real Redis clients send <strong>RESP multibulk arrays</strong> &mdash; <code>*3\r\n$3\r\nSET\r\n...</code> &mdash; but the parser also accepts plain space-separated inline commands (<code>PING\r\n</code>), which makes manual testing with <code>nc</code> painless. TCP gives you a byte stream, not message boundaries, so the parser has to cope with a request arriving in pieces across multiple <code>recv()</code> calls, or multiple requests arriving in a single <code>recv()</code>:</p>
+
+    <pre><code class="language-cpp">class Parser {
+public:
+    void feed(const char* data, size_t len);       // append raw bytes
+    std::optional&lt;Request&gt; next();                  // pop one complete request, if any
+private:
+    std::string buf_;
+    size_t pos_ = 0;   // parse cursor; buf_ is compacted periodically, not on every call
+};</code></pre>
+
+    <p><code>next()</code> is the whole contract: call it in a loop after every <code>feed()</code>. If a complete request is sitting in the buffer it comes back immediately; if the buffer ends mid-length-prefix or mid-bulk-string, it returns <code>nullopt</code> and leaves <code>pos_</code> untouched, so the next <code>feed()</code> picks up exactly where parsing left off. The buffer is only compacted (bytes before <code>pos_</code> erased) once it&#39;s grown past a threshold, so a stream of small pipelined requests doesn&#39;t pay a <code>memmove</code> per request.</p>
+
+    <pre class="mermaid">
+sequenceDiagram
+    participant Sock as socket recv()
+    participant Buf as Parser buffer
+    participant Disp as dispatch()
+    Sock->>Buf: feed(bytes) [partial: "*3\r\n$3\r\nSET\r\n$1"]
+    Buf-->>Sock: next() -> nullopt (incomplete)
+    Sock->>Buf: feed(bytes) [rest: "\r\nk\r\n$1\r\nv\r\n"]
+    Buf-->>Disp: next() -> ["SET", "k", "v"]
+    Disp-->>Buf: encoded reply appended to outbuf
+    Buf-->>Sock: next() -> nullopt (buffer drained)
+    </pre>
+
+    <h2 id="the-reactor">The reactor: one acceptor, N pollers, zero shared state per connection</h2>
+    <p>DinoDB deliberately does <strong>not</strong> use <code>epoll</code>/<code>kqueue</code>/<code>SO_REUSEPORT</code> per-core fan-out the way high-end event-driven servers usually do. <code>poll()</code> is portable POSIX, present and identical on Linux and macOS, and simple enough to get right without conditionally-compiled platform code. The trade is a linear rescan of each worker&#39;s fd set every iteration instead of O(1) readiness notification &mdash; a real cost at very high connection counts, and a non-issue at the scale this project targets.</p>
+
+    <pre class="mermaid">
+flowchart LR
+    Client1((client)) -->|connect| Acceptor
+    Client2((client)) -->|connect| Acceptor
+    Client3((client)) -->|connect| Acceptor
+    Acceptor["Acceptor thread\nblocking accept()"]
+    Acceptor -->|fd, round-robin| Q0["Worker 0 pending queue"]
+    Acceptor -->|fd, round-robin| Q1["Worker 1 pending queue"]
+    Q0 --> P0["Worker 0: poll() over its own fds"]
+    Q1 --> P1["Worker 1: poll() over its own fds"]
+    </pre>
+
+    <p>Ownership is the key invariant: once the acceptor hands a file descriptor to worker <em>i</em>&#39;s pending queue, only worker <em>i</em> ever calls <code>recv()</code>, <code>send()</code>, or <code>close()</code> on it. There is exactly one <code>std::mutex</code> in the entire networking layer &mdash; guarding each worker&#39;s pending-fd queue &mdash; and it&#39;s held only for the microseconds it takes to push or drain a <code>std::deque&lt;int&gt;</code>. No connection state is ever shared between threads, so the per-connection buffers (<code>resp::Parser</code>, the pending output bytes) don&#39;t need any synchronization at all.</p>
+    <p>Each worker&#39;s loop, per iteration:</p>
+    <ol>
+        <li>Drain its pending queue into its local connection map (new fds only).</li>
+        <li>Build a <code>pollfd</code> list: <code>POLLIN</code> always, plus <code>POLLOUT</code> if that connection has unsent reply bytes buffered.</li>
+        <li><code>poll()</code> with a 200ms timeout &mdash; short enough that a newly-assigned connection is never invisible for long, long enough not to spin.</li>
+        <li>For each ready fd: drain <code>recv()</code> until <code>EAGAIN</code>, feed every byte to that connection&#39;s parser, <code>dispatch()</code> every complete request that falls out, append the encoded reply to the connection&#39;s outbound buffer, then try to flush that buffer with <code>send()</code> (partial sends are just remembered and retried next iteration via <code>POLLOUT</code>).</li>
+    </ol>
+
+    <h2 id="command-dispatch">Command dispatch</h2>
+    <p><code>dispatch()</code> is a flat, case-insensitive lookup over ~40 commands covering five data types plus key/server management. No command object graph, no visitor pattern &mdash; just a function that takes a <code>Store&amp;</code> and a parsed request and returns an already-RESP-encoded reply string:</p>
+
+    <table>
+        <thead><tr><th>Category</th><th>Commands</th></tr></thead>
+        <tbody>
+            <tr><td>Generic</td><td><code>DEL</code> <code>EXISTS</code> <code>TYPE</code> <code>EXPIRE</code> <code>PEXPIRE</code> <code>TTL</code> <code>PTTL</code> <code>PERSIST</code> <code>KEYS</code> <code>FLUSHALL</code> <code>DBSIZE</code></td></tr>
+            <tr><td>Strings</td><td><code>SET</code> (<code>EX</code>/<code>PX</code>/<code>NX</code>/<code>XX</code>) <code>GET</code> <code>GETSET</code> <code>APPEND</code> <code>STRLEN</code> <code>MSET</code> <code>MGET</code> <code>INCR</code> <code>DECR</code> <code>INCRBY</code> <code>DECRBY</code></td></tr>
+            <tr><td>Hashes</td><td><code>HSET</code> <code>HGET</code> <code>HDEL</code> <code>HEXISTS</code> <code>HGETALL</code> <code>HKEYS</code> <code>HVALS</code> <code>HLEN</code> <code>HINCRBY</code></td></tr>
+            <tr><td>Lists</td><td><code>LPUSH</code> <code>RPUSH</code> <code>LPOP</code> <code>RPOP</code> <code>LLEN</code> <code>LRANGE</code> <code>LINDEX</code></td></tr>
+            <tr><td>Sets</td><td><code>SADD</code> <code>SREM</code> <code>SISMEMBER</code> <code>SMEMBERS</code> <code>SCARD</code></td></tr>
+            <tr><td>Sorted sets</td><td><code>ZADD</code> <code>ZSCORE</code> <code>ZREM</code> <code>ZCARD</code> <code>ZINCRBY</code> <code>ZRANGE</code></td></tr>
+            <tr><td>Server</td><td><code>PING</code> <code>ECHO</code> <code>INFO</code> <code>SAVE</code>/<code>BGSAVE</code> <code>SELECT</code> <code>CONFIG</code> (stub)</td></tr>
+        </tbody>
+    </table>
+
+    <p>Every handler follows the same shape: validate argument count and types up front (returning a RESP error immediately if they&#39;re wrong), then take exactly one lock through the <code>Store</code> API, mutate, and encode a reply. No handler holds a lock across more than one store call, which is what makes the &ldquo;one command touches one shard&rdquo; invariant hold in practice and not just on paper.</p>
+
+    <h3 id="asymptotic-cost">Asymptotic cost per operation</h3>
+    <table>
+        <thead><tr><th>Command</th><th>Cost</th><th>Why</th></tr></thead>
+        <tbody>
+            <tr><td><code>GET</code> / <code>SET</code> / <code>HGET</code> / <code>SADD</code></td><td>O(1) amortized</td><td>hash lookup in one shard</td></tr>
+            <tr><td><code>LPUSH</code> / <code>RPOP</code></td><td>O(1)</td><td><code>std::deque</code> push/pop at either end</td></tr>
+            <tr><td><code>LRANGE start stop</code></td><td>O(k)</td><td>k = size of the returned slice</td></tr>
+            <tr><td><code>ZADD</code> / <code>ZINCRBY</code></td><td>O(log n)</td><td><code>std::multimap</code> insert, n = zset size</td></tr>
+            <tr><td><code>ZRANGE start stop</code></td><td>O(n)</td><td>walks <code>zorder</code> from the front to <code>stop</code></td></tr>
+            <tr><td><code>KEYS pattern</code></td><td>O(total keys)</td><td>full scan across all 32 shards</td></tr>
+        </tbody>
+    </table>
+    <p><code>ZRANGE</code>&#39;s O(n) walk (rather than O(log n + k) via an order-statistics tree) and <code>KEYS</code>&#39;s full scan are the two honest weak points in the current design &mdash; both are correct and simple, neither is what a production KV store would ship.</p>
+
+    <h2 id="persistence">Persistence: a snapshot format, not a log</h2>
+    <p>DinoDB does not implement an append-only file. It has one persistence primitive &mdash; a full point-in-time snapshot &mdash; triggered by <code>SAVE</code>, a periodic autosave timer, and a save-on-clean-shutdown hook for <code>SIGINT</code>/<code>SIGTERM</code>. The format is a small custom length-prefixed binary layout, unrelated to Redis&#39;s RDB format:</p>
+
+    <pre class="mermaid">
+flowchart TB
+    H["Header\n'DINO' magic + version byte"]
+    H --> E1["Entry: type byte, key, expiry flag [+ millis], payload"]
+    E1 --> E2["Entry: type byte, key, expiry flag [+ millis], payload"]
+    E2 --> Edots["... one entry per live key, across all 32 shards ..."]
+    Edots --> EOF["EOF = end of entries"]
+    </pre>
+
+    <p>Each entry&#39;s payload shape depends on its type byte &mdash; a length-prefixed string for <code>String</code>, a count followed by key/value pairs for <code>Hash</code>, and so on for <code>List</code>/<code>Set</code>/<code>ZSet</code>. Writing is a single pass over <code>Store::for_each</code>, which takes each shard&#39;s lock just long enough to copy its live (non-expired) entries out &mdash; so a <code>SAVE</code> never blocks a command for longer than one shard&#39;s scan, and never blocks two shards at once.</p>
+    <p>Durability is via the standard write-temp-file, <code>fsync</code>, <code>rename</code> pattern: <code>SAVE</code> always writes to <code>dinodb.rdb.tmp</code> first and atomically renames it over <code>dinodb.rdb</code> only after every byte is flushed &mdash; a crash mid-write leaves the previous snapshot untouched rather than a half-written file.</p>
+
+    <h2 id="safety-invariants">Concurrency safety invariants</h2>
+    <p>The whole locking story rests on a short list of invariants, each one enforced structurally rather than by convention:</p>
+    <ul>
+        <li><strong>A key belongs to exactly one shard, always</strong>, because <code>shard_for(key)</code> is a pure function of the key&#39;s hash &mdash; there is no code path where a key&#39;s shard changes over its lifetime.</li>
+        <li><strong>No handler holds a lock across a call it doesn&#39;t own.</strong> <code>Store</code>&#39;s public API (<code>get_mut</code>, <code>get_or_create</code>, <code>del</code>, ...) takes and releases its shard lock internally per call; command handlers never reach into a <code>Shard</code> directly.</li>
+        <li><strong>A connection&#39;s buffers are touched by exactly one thread.</strong> Once the acceptor enqueues an fd to worker <em>i</em>, no other worker ever sees that fd again, so <code>resp::Parser</code> and the per-connection output buffer need no synchronization of their own.</li>
+        <li><strong><code>for_each</code></strong> (used by <code>KEYS</code>, <code>SAVE</code>, <code>DBSIZE</code>) <strong>takes a shared lock per shard, one shard at a time</strong> &mdash; never all 32 at once &mdash; so a full scan can&#39;t deadlock against, or starve, a concurrent single-key write on some other shard.</li>
+    </ul>
+
+    <h2 id="a-concrete-trace">A concrete trace</h2>
+    <p>Two clients, one <code>SET</code>, one <code>GET</code>, same key, arriving on different worker threads at roughly the same time:</p>
+
+    <pre class="mermaid">
+sequenceDiagram
+    participant CA as Client A (worker 0): SET user:1 alice
+    participant CB as Client B (worker 3): GET user:1
+    participant Sh as Shard(hash("user:1") % 32)
+
+    CA->>Sh: unique_lock (write)
+    CB->>Sh: shared_lock (write) -- blocks, waits for CA
+    Sh-->>CA: entry created/updated, str="alice"
+    CA->>Sh: unlock
+    Sh-->>CB: lock acquired
+    Sh-->>CB: read str="alice"
+    CB->>Sh: unlock
+    </pre>
+
+    <p>Nothing here is DinoDB-specific &mdash; it&#39;s exactly what a <code>std::shared_mutex</code> guarantees. The interesting part is what <em>doesn&#39;t</em> happen: a third client doing <code>SET other:key 1</code> on a different shard runs concurrently with both of these, untouched, on a third worker thread, the whole time.</p>
+
+    <h2 id="comparison-with-redis">Comparison with Redis</h2>
+    <table>
+        <thead><tr><th></th><th>Redis</th><th>DinoDB</th></tr></thead>
+        <tbody>
+            <tr><td>Language</td><td>C</td><td>C++20</td></tr>
+            <tr><td>Command execution</td><td>Single-threaded event loop (one thread runs all commands, so no locking is needed); optional multi-threaded socket I/O since Redis 6</td><td>Multi-threaded throughout: keys are sharded across 32 <code>std::shared_mutex</code>-guarded buckets, and commands on different shards run genuinely in parallel</td></tr>
+            <tr><td>I/O model</td><td>Custom <code>ae</code> event loop over epoll/kqueue/select</td><td>A dedicated acceptor thread round-robins new connections across a fixed worker pool, each worker running its own <code>poll()</code> loop</td></tr>
+            <tr><td>Memory layout</td><td>Adaptive small-object encodings per type (<code>listpack</code>, <code>intset</code>, <code>embstr</code>, etc.)</td><td>One fixed-layout struct per key; simpler, but higher per-key memory overhead</td></tr>
+            <tr><td>Data types</td><td>Strings, hashes, lists, sets, sorted sets, streams, bitmaps, HyperLogLog, geospatial</td><td>Strings, hashes, lists, sets, sorted sets</td></tr>
+            <tr><td>Persistence</td><td>RDB snapshots and/or an append-only file (AOF)</td><td>Periodic/manual snapshots only, custom binary format</td></tr>
+            <tr><td>Transactions / scripting</td><td><code>MULTI</code>/<code>EXEC</code>, Lua scripting</td><td>Not implemented</td></tr>
+            <tr><td>Pub/Sub</td><td>Yes</td><td>Not implemented</td></tr>
+            <tr><td>Replication / clustering</td><td>Primary-replica, Sentinel, Redis Cluster</td><td>Not implemented (single standalone process)</td></tr>
+        </tbody>
+    </table>
+    <p>In short: Redis gets its safety from running commands on a single thread; DinoDB instead accepts real lock overhead in exchange for genuine multi-core parallelism on independent keys. Redis&#39;s feature set (scripting, replication, many more data types, tunable durability) is far broader &mdash; DinoDB is a much smaller project focused on the core KV/data-structure surface.</p>
+
+    <h2 id="when-to-use-it">When this design is (and isn&#39;t) the right call</h2>
+    <table>
+        <thead><tr><th>Use it when</th><th>Reach for something else when</th></tr></thead>
+        <tbody>
+            <tr><td>Workload is CPU-bound across many independent keys</td><td>Workload is dominated by a handful of hot keys &mdash; sharding doesn&#39;t help those</td></tr>
+            <tr><td>You want to reason about correctness with plain <code>std::shared_mutex</code> semantics</td><td>You need to squeeze out the last 20% of throughput and can justify a lock-free design&#39;s audit cost</td></tr>
+            <tr><td>Memory headroom for a fixed-layout <code>Value</code> per key is fine</td><td>Key count is huge and per-key overhead has to be minimized</td></tr>
+            <tr><td>A snapshot-based durability model is acceptable</td><td>You need Redis&#39;s AOF-level durability guarantees</td></tr>
+        </tbody>
+    </table>
+
+    <h2 id="whats-not-here-yet">What&#39;s not here yet</h2>
+    <p>Pub/Sub, <code>MULTI</code>/<code>EXEC</code> transactions, Lua scripting, <code>SCAN</code> cursors, streams, bitmaps, HyperLogLog, geospatial commands, and any form of replication or clustering are all absent. Each is a reasonably self-contained addition given the existing layering &mdash; <code>SCAN</code>, for instance, is mostly a cursor wrapped around the same <code>for_each</code> that already powers <code>KEYS</code>.</p>
+    <p>Full source: <a href="https://github.com/udaysehgal/dinodb" target="_blank" rel="noreferrer">github.com/udaysehgal/dinodb</a></p>
+
+    </div>
+</div>
+
+<div class="container">
+
+    <nav class="flex container suggested">
+
+
+
+        <a rel="prev" href="/posts/t/" title="Previous post (older)">
+            <span>Previous</span>
+            02.07.2021
+            </a>
+
+
+    </nav>
+
+</div>
+</main>
+
+
+        </main>
+        <footer class="footer flex">
+    <section class="container">
+        <nav class="footer-links">
+
+            <a href="/index.xml">RSS</a>
+
+        </nav>
+    </section>
+
+    <script async src="/js/features.min.cb54200d744e5e9da0fa39e8ed570c19eac326f18a67904837ffada21795dfe2.js" data-enable-footnotes="true"></script>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.js';
+        mermaid.initialize({ startOnLoad: true, theme: 'dark', securityLevel: 'loose' });
+    </script>
+</footer>
+    </body>
+</html>
